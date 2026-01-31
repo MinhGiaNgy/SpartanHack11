@@ -37,10 +37,11 @@ interface LocationMarkerProps {
     incidents: Incident[];
     activeIncident: Incident | null;
     onIncidentClick: (incident: Incident) => void;
+    onIncidentAdded: (incident: Incident) => void;
 }
 
 // Component to handle map clicks and rendering
-function MapLayers({ incidents, activeIncident, onIncidentClick }: LocationMarkerProps) {
+function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded }: LocationMarkerProps) {
     const map = useMap();
     const [position, setPosition] = useState<L.LatLng | null>(null);
     const [form, setForm] = useState<IncidentForm>({
@@ -163,16 +164,38 @@ function MapLayers({ incidents, activeIncident, onIncidentClick }: LocationMarke
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!position) return;
-        const data = {
+
+        const payload = {
             location: { lat: position.lat, lng: position.lng },
-            ...form,
-            timestamp: new Date().toISOString()
+            ...form
         };
-        console.log('Incident Report JSON:', JSON.stringify(data, null, 2));
-        setSubmittedData(data);
+
+        try {
+            const res = await fetch('/api/incidents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                const savedIncident = await res.json();
+                console.log('Incident Saved:', savedIncident);
+                setSubmittedData(savedIncident);
+
+                // Update parent state
+                onIncidentAdded(savedIncident);
+
+                alert("Report submitted successfully!");
+            } else {
+                alert("Failed to save report.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error submitting report.");
+        }
     };
 
     // Fix for Default Icon (useEffect) ...
@@ -191,7 +214,7 @@ function MapLayers({ incidents, activeIncident, onIncidentClick }: LocationMarke
         if (position && newMarkerRef.current) newMarkerRef.current.openPopup();
     }, [position]);
 
-    const markersRef = useRef<{ [key: number]: L.Marker | null }>({});
+    const markersRef = useRef<{ [key: string | number]: L.Marker | null }>({});
     useEffect(() => {
         if (activeIncident && markersRef.current[activeIncident.id]) {
             markersRef.current[activeIncident.id]?.openPopup();
@@ -345,9 +368,10 @@ interface MapProps {
     incidents?: Incident[];
     activeIncident?: Incident | null;
     onIncidentClick?: (incident: Incident) => void;
+    onIncidentAdded?: (incident: Incident) => void;
 }
 
-export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { } }: MapProps) {
+export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { }, onIncidentAdded = () => { } }: MapProps) {
     // Default position (Lansing/East Lansing area for SpartanHack)
     const defaultPosition: [number, number] = [42.7284, -84.4805];
 
@@ -368,6 +392,7 @@ export default function Map({ incidents = [], activeIncident = null, onIncidentC
                     incidents={incidents}
                     activeIncident={activeIncident}
                     onIncidentClick={onIncidentClick}
+                    onIncidentAdded={onIncidentAdded}
                 />
             </MapContainer>
         </div>

@@ -8,7 +8,7 @@ export interface IncidentForm {
 }
 
 export type Incident = IncidentForm & {
-    id: number;
+    id: string | number; // Support both DB (string) and Dummy (number)
     location: { lat: number; lng: number };
     timestamp: string;
 };
