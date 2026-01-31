@@ -1,2 +1,2 @@
 # SpartanHack11
-i love spartanhack
+i love spartanhac
