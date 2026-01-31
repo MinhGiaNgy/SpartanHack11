@@ -13,7 +13,7 @@ export default function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
-      role: "assistant",
+      role: "a very helpful, friend and eager assistant",
       content:
         "Hey! Ask me about campus safety scores or recent trends around MSU.",
     },
