@@ -89,7 +89,7 @@ const getRecentIncidents = tool(
     name: "get_recent_incidents",
     description: "Fetch recent incidents from the database.",
     schema: z.object({
-      source: z.string().optional().describe("crimemapping or msu_clery"),
+      source: z.string().optional().describe("msu_clery"),
       limit: z.number().optional().describe("Max results (1-50)."),
       since: z
         .string()
@@ -121,7 +121,7 @@ const getMostRecentIncident = tool(
     name: "get_most_recent_incident",
     description: "Fetch the most recent incident from the database.",
     schema: z.object({
-      source: z.string().optional().describe("crimemapping or msu_clery"),
+      source: z.string().optional().describe("msu_clery"),
     }),
   }
 );

@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // Import Types and Dummy Data (in a real app, data would be fetched here)
 import { DUMMY_DATA, Incident } from '../lib/data';
@@ -18,11 +18,33 @@ const Map = dynamic(() => import('../components/Map'), {
 });
 
 export default function MapPage() {
+    const [incidents, setIncidents] = useState<Incident[]>([]);
     const [activeIncident, setActiveIncident] = useState<Incident | null>(null);
+
+    // Fetch Incidents on Load
+    useEffect(() => {
+        const fetchIncidents = async () => {
+            try {
+                const res = await fetch('/api/incidents');
+                if (res.ok) {
+                    const data = await res.json();
+                    setIncidents(data);
+                }
+            } catch (error) {
+                console.error("Error fetching incidents:", error);
+            }
+        };
+        fetchIncidents();
+    }, []);
 
     // Handlers
     const handleIncidentSelect = (incident: Incident) => {
         setActiveIncident(incident);
+    };
+
+    const handleIncidentAdded = (newIncident: Incident) => {
+        setIncidents(prev => [newIncident, ...prev]);
+        setActiveIncident(newIncident); // Optional: select the new incident
     };
 
     return (
@@ -51,7 +73,7 @@ export default function MapPage() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                        {DUMMY_DATA.map((incident) => (
+                        {incidents.map((incident) => (
                             <button
                                 key={incident.id}
                                 onClick={() => handleIncidentSelect(incident)}
@@ -92,9 +114,10 @@ export default function MapPage() {
                 {/* Map Panel */}
                 <div className="panel p-2 h-full min-h-[400px] overflow-hidden">
                     <Map
-                        incidents={DUMMY_DATA}
+                        incidents={incidents}
                         activeIncident={activeIncident}
                         onIncidentClick={handleIncidentSelect}
+                        onIncidentAdded={handleIncidentAdded}
                     />
                 </div>
             </main>
