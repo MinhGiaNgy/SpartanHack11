@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0433335b-a5c6-4f79-b56f-4387a9cd6438" name="Changes" comment="hahahahaha" />
+    <list default="true" id="0433335b-a5c6-4f79-b56f-4387a9cd6438" name="Changes" comment="hahahahaha">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/agent/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/agent/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/ChatWidget.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/ChatWidget.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/globals.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/agent.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/agent.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -54,7 +63,7 @@
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;npm.Next.js: server-side.executor&quot;: &quot;Run&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;D:\\Coding\\Projects\\Personal Project\\Hackathon 2026\\node_modules\\typescript\\lib&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Program Files\\JetBrains\\IntelliJ IDEA 2025.3.2\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
   &quot;keyToStringList&quot;: {
@@ -63,7 +72,7 @@
     ]
   }
 }</component>
-  <component name="RunManager" selected="JavaScript Debug.Next.js: debug client-side">
+  <component name="RunManager" selected="npm.Next.js: server-side">
     <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
       <method v="2" />
     </configuration>
@@ -96,6 +105,7 @@
       <workItem from="1769877681465" duration="512000" />
       <workItem from="1769878216613" duration="9345000" />
       <workItem from="1769891602591" duration="218000" />
+      <workItem from="1769893134557" duration="7075000" />
     </task>
     <task id="LOCAL-00001" summary="hahahahaha">
       <option name="closed" value="true" />
@@ -105,11 +115,30 @@
       <option name="project" value="LOCAL" />
       <updated>1769884099424</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="hahahahaha">
+      <option name="closed" value="true" />
+      <created>1769893282833</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1769893282833</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="baseplate frontend" />

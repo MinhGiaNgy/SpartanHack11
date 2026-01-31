@@ -302,7 +302,6 @@ textarea:focus {
   padding: 10px 12px;
   border-radius: 16px;
   font-size: 0.85rem;
-  line-height: 1.35;
   max-width: 85%;
 }
 
@@ -344,6 +343,57 @@ textarea:focus {
   font-weight: 600;
   box-shadow: var(--shadow);
   cursor: pointer;
+}
+
+/* ===== DOUBLE-SPACED ASSISTANT RESPONSES ===== */
+
+.chat-bubble.assistant {
+  white-space: 1;
+}
+
+/* If you're rendering Markdown inside */
+.chat-bubble.assistant p {
+  margin: 1rem 0;
+}
+
+.chat-bubble.assistant h1,
+.chat-bubble.assistant h2,
+.chat-bubble.assistant h3 {
+  margin: 1.4rem 0 0.8rem;
+  line-height: 1.4;
+}
+
+.chat-bubble.assistant ul,
+.chat-bubble.assistant ol {
+  margin: 1rem 0 1.2rem;
+  padding-left: 1.4rem;
+}
+
+.chat-bubble.assistant li {
+  margin: 0.6rem 0;
+}
+
+/* Force bullet markers to show inside assistant markdown */
+.chat-bubble.assistant .chat-markdown ul,
+.chat-bubble.assistant .chat-markdown ol {
+  list-style: disc;
+  list-style-position: outside;
+  padding-left: 1.4rem;
+  margin: 1rem 0;
+}
+
+.chat-bubble.assistant .chat-markdown ol {
+  list-style: decimal;
+}
+
+.chat-bubble.assistant .chat-markdown li {
+  display: list-item; /* overrides some resets */
+  margin: 0.6rem 0;
+}
+
+/* Make sure markers are visible */
+.chat-bubble.assistant .chat-markdown li::marker {
+  color: currentColor;
 }
 
 @keyframes drift {

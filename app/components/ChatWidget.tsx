@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Message = {
   role: "user" | "assistant";
@@ -14,8 +16,7 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content:
-        "Hey! Ask me about campus safety scores or recent trends around MSU.",
+      content: "Hey! Ask me about campus safety scores or recent trends around MSU.",
     },
   ]);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -42,18 +43,13 @@ export default function ChatWidget() {
 
       const data = await res.json();
       const reply =
-        typeof data?.output === "string"
-          ? data.output
-          : "Sorry, I had trouble answering that.";
+          typeof data?.output === "string" ? data.output : "Sorry, I had trouble answering that.";
 
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: "Network error. Try again in a moment.",
-        },
+        { role: "assistant", content: "Network error. Try again in a moment." },
       ]);
     } finally {
       setLoading(false);
@@ -61,57 +57,61 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="chat-widget">
-      {open ? (
-        <div className="chat-panel">
-          <header className="chat-header">
-            <div>
-              <p className="chat-title">SpartaSafe AI</p>
-              <p className="chat-subtitle">Test the agent API</p>
-            </div>
-            <button
-              className="chat-close"
-              onClick={() => setOpen(false)}
-              aria-label="Close chat"
-            >
-              ×
-            </button>
-          </header>
+      <div className="chat-widget">
+        {open ? (
+            <div className="chat-panel">
+              <header className="chat-header">
+                <div>
+                  <p className="chat-title">SpartaSafe AI</p>
+                  <p className="chat-subtitle">Test the agent API</p>
+                </div>
+                <button
+                    className="chat-close"
+                    onClick={() => setOpen(false)}
+                    aria-label="Close chat"
+                >
+                  ×
+                </button>
+              </header>
 
-          <div className="chat-body">
-            {messages.map((message, index) => (
-              <div
-                key={`${message.role}-${index}`}
-                className={`chat-bubble ${message.role}`}
-              >
-                {message.content}
+              <div className="chat-body">
+                {messages.map((message, index) => (
+                    <div
+                        key={`${message.role}-${index}`}
+                        className={`chat-bubble ${message.role}`}
+                    >
+                      {/* Render Markdown */}
+                      <div className="chat-markdown">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                ))}
+
+                {loading && <div className="chat-bubble assistant">Typing…</div>}
+                <div ref={endRef} />
               </div>
-            ))}
-            {loading && (
-              <div className="chat-bubble assistant">Typing…</div>
-            )}
-            <div ref={endRef} />
-          </div>
 
-          <div className="chat-input">
-            <input
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="Ask about Wilson Hall…"
-              onKeyDown={(event) => {
-                if (event.key === "Enter") sendMessage();
-              }}
-            />
-            <button className="btn btn-primary" onClick={sendMessage}>
-              Send
+              <div className="chat-input">
+                <input
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    placeholder="Ask about Wilson Hall…"
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") sendMessage();
+                    }}
+                />
+                <button className="btn btn-primary" onClick={sendMessage}>
+                  Send
+                </button>
+              </div>
+            </div>
+        ) : (
+            <button className="chat-fab" onClick={() => setOpen(true)}>
+              Chat
             </button>
-          </div>
-        </div>
-      ) : (
-        <button className="chat-fab" onClick={() => setOpen(true)}>
-          Chat
-        </button>
-      )}
-    </div>
+        )}
+      </div>
   );
 }
