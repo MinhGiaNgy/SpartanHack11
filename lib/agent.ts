@@ -1,6 +1,7 @@
 import { createAgent, tool } from "langchain";
 import { ChatOpenAI } from "@langchain/openai";
 import * as z from "zod";
+import { prisma } from "./prisma";
 
 const SYSTEM_PROMPT =
   "You are SpartaSafe, a campus safety assistant for Michigan State University. " +
@@ -63,6 +64,40 @@ const getSafetyScore = tool(
   }
 );
 
+const getRecentIncidents = tool(
+  async ({ source, limit, since }) => {
+    const take = Math.min(Math.max(limit ?? 10, 1), 50);
+    const where: Record<string, unknown> = {};
+
+    if (source) {
+      where.source = source;
+    }
+    if (since && !Number.isNaN(Date.parse(since))) {
+      where.occurredAt = { gte: new Date(since) };
+    }
+
+    const incidents = await prisma.crimeIncident.findMany({
+      where,
+      orderBy: { occurredAt: "desc" },
+      take,
+    });
+
+    return JSON.stringify(incidents);
+  },
+  {
+    name: "get_recent_incidents",
+    description: "Fetch recent incidents from the database.",
+    schema: z.object({
+      source: z.string().optional().describe("crimemapping or msu_clery"),
+      limit: z.number().optional().describe("Max results (1-50)."),
+      since: z
+        .string()
+        .optional()
+        .describe("ISO date string (e.g., 2026-01-01)."),
+    }),
+  }
+);
+
 export async function buildAgent() {
   const model = new ChatOpenAI({
     model: "gpt-5-nano",
@@ -70,7 +105,7 @@ export async function buildAgent() {
 
   return createAgent({
     model,
-    tools: [getSafetyScore],
+    tools: [getSafetyScore, getRecentIncidents],
     systemPrompt: SYSTEM_PROMPT,
   });
 }
