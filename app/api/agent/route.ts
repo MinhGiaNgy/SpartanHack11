@@ -18,10 +18,11 @@ export async function POST(request: Request) {
     messages: [{ role: "user", content: input }],
   });
 
+
   const output = (() => {
     const direct =
       typeof (result as { content?: unknown })?.content === "string"
-        ? (result as { content: string }).content
+        ? (result as unknown as { content: string }).content
         : null;
     if (direct) return direct;
 
