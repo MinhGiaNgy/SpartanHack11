@@ -28,6 +28,8 @@ export type CleryIncidentInput = {
   locationName: string | null;
   address: string | null;
   crossStreet: string | null;
+  latitude: number | null;
+  longitude: number | null;
   agency: string;
   occurredAt: Date | null;
   reportedAt: Date | null;
@@ -109,6 +111,8 @@ export const normalizeClery = (rows: CleryRow[]): CleryIncidentInput[] =>
       locationName: locationName ?? null,
       address: address ?? null,
       crossStreet: crossStreet ?? null,
+      latitude: null,
+      longitude: null,
       agency: "MSU Police",
       occurredAt,
       reportedAt,

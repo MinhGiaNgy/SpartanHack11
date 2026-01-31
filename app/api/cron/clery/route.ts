@@ -1,4 +1,5 @@
 import { fetchClery, normalizeClery } from "../../../../lib/clery";
+import { applyGeocoding, buildFallbackQueries } from "../../../../lib/geocode";
 import { prisma } from "../../../../lib/prisma";
 
 export const runtime = "nodejs";
@@ -26,49 +27,101 @@ const ingest = async (request: Request) => {
   const payload = await fetchClery({ start, length });
   const normalized = normalizeClery(payload.data);
 
-  const upserts = normalized.map((incident) =>
-    prisma.crimeIncident.upsert({
-      where: { sourceIncidentId: incident.sourceIncidentId },
-      update: {
-        incidentNum: incident.incidentNum,
-        caseNumber: incident.caseNumber,
-        offenseCode: incident.offenseCode,
-        description: incident.description,
-        location: incident.location,
-        locationName: incident.locationName,
-        address: incident.address,
-        crossStreet: incident.crossStreet,
-        agency: incident.agency,
-        occurredAt: incident.occurredAt,
-        reportedAt: incident.reportedAt,
-        disposition: incident.disposition,
-        raw: incident.raw,
-      },
-      create: {
-        source: incident.source,
-        sourceIncidentId: incident.sourceIncidentId,
-        incidentNum: incident.incidentNum,
-        caseNumber: incident.caseNumber,
-        offenseCode: incident.offenseCode,
-        description: incident.description,
-        location: incident.location,
-        locationName: incident.locationName,
-        address: incident.address,
-        crossStreet: incident.crossStreet,
-        agency: incident.agency,
-        occurredAt: incident.occurredAt,
-        reportedAt: incident.reportedAt,
-        disposition: incident.disposition,
-        raw: incident.raw,
-      },
-    })
+  const geocodeParam = url.searchParams.get("geocode");
+  const shouldGeocode = geocodeParam !== "false";
+  const geocodeMax = Number(
+    url.searchParams.get("geocodeMax") ??
+      process.env.GEOCODING_MAX_PER_RUN ??
+      "25"
+  );
+  const geocodeDelay = Number(
+    url.searchParams.get("geocodeDelay") ??
+      process.env.GEOCODING_DELAY_MS ??
+      "1100"
   );
 
-  await prisma.$transaction(upserts);
+  const toUpsert = shouldGeocode
+    ? await applyGeocoding(
+        normalized,
+        (incident) => {
+          if (!incident.address) return null;
+          return `${incident.address}, East Lansing, MI`;
+        },
+        {
+          max: geocodeMax,
+          delayMs: geocodeDelay,
+          fallback: (incident) =>
+            buildFallbackQueries(
+              null,
+              incident.address,
+              "East Lansing, MI"
+            ),
+        }
+      )
+    : normalized;
+
+  const geocodedCount = toUpsert.filter(
+    (incident) => incident.latitude != null && incident.longitude != null
+  ).length;
+
+  const batchSize = Math.max(
+    Number(process.env.INGEST_BATCH_SIZE ?? "25"),
+    1
+  );
+  let upsertedCount = 0;
+
+  for (let i = 0; i < toUpsert.length; i += batchSize) {
+    const batch = toUpsert.slice(i, i + batchSize);
+    await Promise.all(
+      batch.map((incident) =>
+        prisma.crimeIncident.upsert({
+          where: { sourceIncidentId: incident.sourceIncidentId },
+          update: {
+            incidentNum: incident.incidentNum,
+            caseNumber: incident.caseNumber,
+            offenseCode: incident.offenseCode,
+            description: incident.description,
+            location: incident.location,
+            locationName: incident.locationName,
+            address: incident.address,
+            crossStreet: incident.crossStreet,
+            latitude: incident.latitude,
+            longitude: incident.longitude,
+            agency: incident.agency,
+            occurredAt: incident.occurredAt,
+            reportedAt: incident.reportedAt,
+            disposition: incident.disposition,
+            raw: incident.raw,
+          },
+          create: {
+            source: incident.source,
+            sourceIncidentId: incident.sourceIncidentId,
+            incidentNum: incident.incidentNum,
+            caseNumber: incident.caseNumber,
+            offenseCode: incident.offenseCode,
+            description: incident.description,
+            location: incident.location,
+            locationName: incident.locationName,
+            address: incident.address,
+            crossStreet: incident.crossStreet,
+            latitude: incident.latitude,
+            longitude: incident.longitude,
+            agency: incident.agency,
+            occurredAt: incident.occurredAt,
+            reportedAt: incident.reportedAt,
+            disposition: incident.disposition,
+            raw: incident.raw,
+          },
+        })
+      )
+    );
+    upsertedCount += batch.length;
+  }
 
   return Response.json({
     total: payload.recordsTotal,
-    ingested: normalized.length,
+    ingested: upsertedCount,
+    geocoded: shouldGeocode ? geocodedCount : 0,
   });
 };
 

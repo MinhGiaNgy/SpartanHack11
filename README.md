@@ -26,11 +26,6 @@ npm.cmd run dev
 
 ## Ingest data (optional)
 
-CrimeMapping (East Lansing area):
-```
-curl.exe -X POST "http://localhost:3000/api/cron/crime?days=7"
-```
-
 MSU Clery (campus incidents):
 ```
 curl.exe -X POST "http://localhost:3000/api/cron/clery?start=0&length=250"

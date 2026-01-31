@@ -11,21 +11,23 @@ model CrimeIncident {
   source           String
   sourceIncidentId String    @unique
   incidentNum      String?
-  caseNumber       String?
-  offenseCode      String?
   description      String
   location         String
-  locationName     String?
-  address          String?
-  crossStreet      String?
   agency           String
   occurredAt       DateTime?
-  reportedAt       DateTime?
   typeId           String?
   typeIconUrl      String?
   mapItId          String?
-  disposition      String?
   raw              Json
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  address          String?
+  caseNumber       String?
+  crossStreet      String?
+  disposition      String?
+  locationName     String?
+  offenseCode      String?
+  reportedAt       DateTime?
+  latitude         Float?
+  longitude        Float?
 }
