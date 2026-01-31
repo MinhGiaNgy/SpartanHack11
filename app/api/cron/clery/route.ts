@@ -1,5 +1,5 @@
 import { fetchClery, normalizeClery } from "../../../../lib/clery";
-import { applyGeocoding } from "../../../../lib/geocode";
+import { applyGeocoding, buildFallbackQueries } from "../../../../lib/geocode";
 import { prisma } from "../../../../lib/prisma";
 
 export const runtime = "nodejs";
@@ -44,18 +44,18 @@ const ingest = async (request: Request) => {
     ? await applyGeocoding(
         normalized,
         (incident) => {
-          const pieces = [
-            incident.locationName,
-            incident.address,
-            "Michigan State University",
-            "East Lansing, MI",
-          ].filter(Boolean);
-          if (!pieces.length) return null;
-          return pieces.join(", ");
+          if (!incident.address) return null;
+          return `${incident.address}, East Lansing, MI`;
         },
         {
           max: geocodeMax,
           delayMs: geocodeDelay,
+          fallback: (incident) =>
+            buildFallbackQueries(
+              null,
+              incident.address,
+              "East Lansing, MI"
+            ),
         }
       )
     : normalized;

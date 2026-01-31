@@ -1,4 +1,4 @@
-import { applyGeocoding } from "../../../../lib/geocode";
+import { applyGeocoding, buildFallbackQueries } from "../../../../lib/geocode";
 import { prisma } from "../../../../lib/prisma";
 
 export const runtime = "nodejs";
@@ -51,16 +51,19 @@ export async function POST(request: Request) {
     : await applyGeocoding(
         incidents,
         (incident) => {
-          const parts = [
-            incident.locationName,
-            incident.address,
-            incident.location,
-            "East Lansing, MI",
-          ].filter(Boolean);
-          if (!parts.length) return null;
-          return parts.join(", ");
+          if (!incident.address) return null;
+          return `${incident.address}, East Lansing, MI`;
         },
-        { max: limit, delayMs }
+        {
+          max: limit,
+          delayMs,
+          fallback: (incident) =>
+            buildFallbackQueries(
+              null,
+              incident.address ?? null,
+              "East Lansing, MI"
+            ),
+        }
       );
 
   const updates = geocoded

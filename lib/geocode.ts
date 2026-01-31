@@ -49,10 +49,51 @@ const geocodeNominatim = async (query: string): Promise<GeocodeResult | null> =>
   return { latitude, longitude };
 };
 
+const sanitizeAddress = (value: string) => {
+  let cleaned = value;
+  cleaned = cleaned.replace(/\b(Bldg\.?|Building|Hall)\b/gi, "");
+  cleaned = cleaned.replace(/\b(Apt|Apartment|Suite|Ste|Unit|#)\s*\w+/gi, "");
+  cleaned = cleaned.replace(/\b(BLOCK)\b/gi, "");
+  cleaned = cleaned.replace(/\d+\s*-\s*\d+/g, "");
+  cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
+  return cleaned;
+};
+
+const buildFallbackQueries = (
+  locationName: string | null | undefined,
+  address: string | null | undefined,
+  cityContext: string
+) => {
+  const queries: string[] = [];
+
+  const loc = locationName?.trim() ?? "";
+  const addr = address?.trim() ?? "";
+  const addrClean = addr ? sanitizeAddress(addr) : "";
+  const locClean = loc ? sanitizeAddress(loc) : "";
+
+  if (loc && addr) {
+    queries.push(`${loc}, ${addr}, ${cityContext}`);
+  }
+  if (loc) {
+    queries.push(`${loc}, ${cityContext}`);
+  }
+  if (addr) {
+    queries.push(`${addr}, ${cityContext}`);
+  }
+  if (addrClean && addrClean !== addr) {
+    queries.push(`${addrClean}, ${cityContext}`);
+  }
+  if (locClean && locClean !== loc) {
+    queries.push(`${locClean}, ${cityContext}`);
+  }
+
+  return Array.from(new Set(queries.filter(Boolean)));
+};
+
 export const applyGeocoding = async <T extends HasLatLng>(
   items: T[],
   getQuery: (item: T) => string | null,
-  options?: { max?: number; delayMs?: number }
+  options?: { max?: number; delayMs?: number; fallback?: (item: T) => string[] }
 ): Promise<T[]> => {
   const max = Math.max(options?.max ?? 25, 0);
   const delayMs = Math.max(options?.delayMs ?? 1100, 0);
@@ -66,20 +107,26 @@ export const applyGeocoding = async <T extends HasLatLng>(
     if (processed >= max) break;
     if (item.latitude != null && item.longitude != null) continue;
 
-    const query = getQuery(item);
-    if (!query) continue;
+    const baseQuery = getQuery(item);
+    const fallbackQueries = options?.fallback?.(item) ?? [];
+    const queries = Array.from(
+      new Set([baseQuery, ...fallbackQueries].filter(Boolean))
+    ) as string[];
 
-    if (cache.has(query)) {
-      const cached = cache.get(query);
-      if (cached) {
-        item.latitude = cached.latitude;
-        item.longitude = cached.longitude;
+    if (!queries.length) continue;
+
+    let result: GeocodeResult | null = null;
+    for (const query of queries) {
+      if (cache.has(query)) {
+        result = cache.get(query) ?? null;
+      } else {
+        result = await geocodeNominatim(query);
+        cache.set(query, result);
       }
-      continue;
+
+      if (result) break;
     }
 
-    const result = await geocodeNominatim(query);
-    cache.set(query, result);
     if (result) {
       item.latitude = result.latitude;
       item.longitude = result.longitude;
@@ -93,3 +140,5 @@ export const applyGeocoding = async <T extends HasLatLng>(
 
   return items;
 };
+
+export { buildFallbackQueries };
