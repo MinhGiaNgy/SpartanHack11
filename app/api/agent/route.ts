@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     messages: [{ role: "user", content: input }],
   });
 
+
   const output = (() => {
     const direct =
       typeof (result as { content?: unknown })?.content === "string"
