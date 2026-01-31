@@ -1,4 +1,5 @@
 import ChatWidget from "./components/ChatWidget";
+import Link from 'next/link';
 
 export default function Home() {
   const crimeStats = [
@@ -93,7 +94,7 @@ export default function Home() {
             </div>
 
             <div className="reveal flex flex-wrap gap-3" style={{ animationDelay: "0.2s" }}>
-              <button className="btn btn-primary">Open live map</button>
+              <Link href="/map"><button className="btn btn-primary">Open live map</button></Link>
               <button className="btn btn-ghost">Submit a report</button>
               <span className="chip">AI warning radius: 0.5 mi</span>
             </div>
