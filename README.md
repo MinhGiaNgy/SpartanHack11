@@ -1,20 +1,41 @@
 # SpartanHack11
-i love spartanhack
+SpartaSafe – campus safety map and AI assistant.
 
-### Make sure Prisma folders exist
+## Quick start (new machine)
 
-Confirm the following structure exists in the project root:
+1) Install dependencies
+```
+npm.cmd install
+```
 
-prisma/
+2) Create `.env` with your Supabase connection string
+```
+DATABASE_URL=postgresql://...
+```
 
-migrations/
-
-0000_init/
-
-migration.sql
-
-### Type this into the terminal to get the database:
-
-```md
+3) Set up Prisma + DB
+```
 npx prisma migrate deploy
 npx prisma generate
+```
+
+4) Run the app
+```
+npm.cmd run dev
+```
+
+## Ingest data (optional)
+
+CrimeMapping (East Lansing area):
+```
+curl.exe -X POST "http://localhost:3000/api/cron/crime?days=7"
+```
+
+MSU Clery (campus incidents):
+```
+curl.exe -X POST "http://localhost:3000/api/cron/clery?start=0&length=250"
+```
+
+## Notes
+- Prisma config lives in `prisma.config.ts` and reads `DATABASE_URL` from `.env`.
+- If you rotate DBs, restart the dev server so env vars reload.

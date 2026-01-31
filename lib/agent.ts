@@ -5,7 +5,8 @@ import { prisma } from "./prisma";
 
 const SYSTEM_PROMPT =
   "You are SpartaSafe, a campus safety assistant for Michigan State University. " +
-  "Use tools to look up safety scores. Keep answers concise and avoid speculation.";
+  "Use tools to look up safety scores and recent incidents. " +
+  "Keep answers concise and avoid speculation.";
 
 const getSafetyScore = tool(
   ({ location }) => {
@@ -98,6 +99,33 @@ const getRecentIncidents = tool(
   }
 );
 
+const getMostRecentIncident = tool(
+  async ({ source }) => {
+    const where: Record<string, unknown> = {};
+    if (source) {
+      where.source = source;
+    }
+
+    const incident = await prisma.crimeIncident.findFirst({
+      where,
+      orderBy: [
+        { occurredAt: "desc" },
+        { reportedAt: "desc" },
+        { createdAt: "desc" },
+      ],
+    });
+
+    return JSON.stringify(incident);
+  },
+  {
+    name: "get_most_recent_incident",
+    description: "Fetch the most recent incident from the database.",
+    schema: z.object({
+      source: z.string().optional().describe("crimemapping or msu_clery"),
+    }),
+  }
+);
+
 export async function buildAgent() {
   const model = new ChatOpenAI({
     model: "gpt-5-nano",
@@ -105,7 +133,7 @@ export async function buildAgent() {
 
   return createAgent({
     model,
-    tools: [getSafetyScore, getRecentIncidents],
+    tools: [getSafetyScore, getRecentIncidents, getMostRecentIncident],
     systemPrompt: SYSTEM_PROMPT,
   });
 }
