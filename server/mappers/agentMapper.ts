@@ -1,6 +1,4 @@
-export interface AgentResponseDto {
-  output: string;
-}
+import type { AgentResponseDto } from "@/server/types/agent";
 
 export function extractAgentOutput(result: unknown): string {
   const direct =
@@ -17,10 +15,9 @@ export function extractAgentOutput(result: unknown): string {
     if (typeof last?.kwargs?.content === "string") return last.kwargs.content;
   }
 
-  console.log("mapper");
   return JSON.stringify(result);
 }
 
-export function toAgentResponseDto(output: string): AgentResponseDto {
+export function toDto(output: string): AgentResponseDto {
   return { output };
 }
