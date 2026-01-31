@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model CrimeIncident {
+  id               String    @id @default(cuid())
+  source           String
+  sourceIncidentId String    @unique
+  incidentNum      String?
+  caseNumber       String?
+  offenseCode      String?
+  description      String
+  location         String
+  locationName     String?
+  address          String?
+  crossStreet      String?
+  agency           String
+  occurredAt       DateTime?
+  reportedAt       DateTime?
+  typeId           String?
+  typeIconUrl      String?
+  mapItId          String?
+  disposition      String?
+  raw              Json
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
