@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type LiveCrimeStatsProps = {
   initialReportsLast24h: number;
@@ -15,6 +15,19 @@ export default function LiveCrimeStats({
 }: LiveCrimeStatsProps) {
   const [reportsLast24h, setReportsLast24h] = useState(initialReportsLast24h);
   const [verifiedIncidents, setVerifiedIncidents] = useState(initialVerifiedIncidents);
+  const [showNotification, setShowNotification] = useState(false);
+  const lastReportsRef = useRef(initialReportsLast24h);
+  const lastNotificationAtRef = useRef(0);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerNotification = useCallback(() => {
+    const now = Date.now();
+    if (now - lastNotificationAtRef.current < 30000) return;
+    lastNotificationAtRef.current = now;
+    setShowNotification(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setShowNotification(false), 5000);
+  }, []);
 
   const refreshStats = useCallback(async () => {
     try {
@@ -23,7 +36,12 @@ export default function LiveCrimeStats({
       const data = await res.json();
 
       if (typeof data?.reportsLast24h === 'number') {
-        setReportsLast24h(data.reportsLast24h);
+        const nextReports = data.reportsLast24h;
+        if (nextReports > lastReportsRef.current) {
+          triggerNotification();
+        }
+        lastReportsRef.current = nextReports;
+        setReportsLast24h(nextReports);
       }
       if (typeof data?.verifiedIncidents === 'number') {
         setVerifiedIncidents(data.verifiedIncidents);
@@ -77,6 +95,12 @@ export default function LiveCrimeStats({
     };
   }, [refreshStats]);
 
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
+
   const crimeStats = [
     { label: 'Reports last 24h', value: reportsLast24h.toString() },
     { label: 'Verified incidents', value: verifiedIncidents.toString() },
@@ -84,15 +108,25 @@ export default function LiveCrimeStats({
   ];
 
   return (
-    <div className="reveal grid gap-4 sm:grid-cols-3" style={{ animationDelay: '0.3s' }}>
-      {crimeStats.map((stat) => (
-        <div key={stat.label} className="panel p-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-[var(--slate)]">
-            {stat.label}
-          </p>
-          <p className="font-display text-2xl">{stat.value}</p>
-        </div>
-      ))}
-    </div>
+    <>
+      <div
+        className={`notification-bar ${showNotification ? 'show' : ''}`}
+        role="status"
+        aria-live="polite"
+        aria-hidden={!showNotification}
+      >
+        New incident reported
+      </div>
+      <div className="reveal grid gap-4 sm:grid-cols-3" style={{ animationDelay: '0.3s' }}>
+        {crimeStats.map((stat) => (
+          <div key={stat.label} className="panel p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-[var(--slate)]">
+              {stat.label}
+            </p>
+            <p className="font-display text-2xl">{stat.value}</p>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
