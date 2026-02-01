@@ -1,10 +1,28 @@
-import ChatWidget from "./components/ChatWidget";
-import Link from 'next/link';
+import Link from "next/link";
+import { prisma } from "../lib/prisma";
 
-export default function Home() {
+export default async function Home() {
+  const now = new Date();
+  const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const [reportsLast24h, verifiedIncidents] = await prisma.$transaction([
+    prisma.crimeIncident.count({
+      where: {
+        OR: [
+          { occurredAt: { gte: since } },
+          { reportedAt: { gte: since } },
+          { createdAt: { gte: since } },
+        ],
+      },
+    }),
+    prisma.crimeIncident.count({
+      where: { source: "msu_clery" },
+    }),
+  ]);
+
   const crimeStats = [
-    { label: "Reports last 24h", value: "27" },
-    { label: "Verified incidents", value: "19" },
+    { label: "Reports last 24h", value: reportsLast24h.toString() },
+    { label: "Verified incidents", value: verifiedIncidents.toString() },
     { label: "Avg response", value: "4 min" },
   ];
 
@@ -66,13 +84,6 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <nav className="hidden items-center gap-6 text-sm font-medium text-[var(--slate)] md:flex">
-          <span>Live Map</span>
-          <span>Safety Scores</span>
-          <span>Report</span>
-          <span>Insights</span>
-        </nav>
-        <button className="btn btn-primary">Report incident</button>
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-12 md:px-10">
@@ -95,8 +106,6 @@ export default function Home() {
 
             <div className="reveal flex flex-wrap gap-3" style={{ animationDelay: "0.2s" }}>
               <Link href="/map"><button className="btn btn-primary">Open live map</button></Link>
-              <button className="btn btn-ghost">Submit a report</button>
-              <span className="chip">AI warning radius: 0.5 mi</span>
             </div>
 
             <div className="reveal grid gap-4 sm:grid-cols-3" style={{ animationDelay: "0.3s" }}>
@@ -195,7 +204,6 @@ export default function Home() {
         Built at SpartaHack · Powered by student reports and AI signal detection.
       </footer>
 
-      <ChatWidget />
     </div>
   );
 }

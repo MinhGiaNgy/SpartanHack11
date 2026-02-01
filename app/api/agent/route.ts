@@ -1,13 +1,6 @@
-import { buildAgent } from "@/lib/agent";
+import { runAgent } from "../../../lib/agent";
 
 export const runtime = "nodejs";
-
-let agentPromise: ReturnType<typeof buildAgent> | null = null;
-
-function getAgent() {
-  if (!agentPromise) agentPromise = buildAgent();
-  return agentPromise;
-}
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
@@ -15,36 +8,11 @@ export async function POST(request: Request) {
 
   if (!input) {
     return Response.json(
-        { error: "Missing 'input' in request body." },
-        { status: 400 }
+      { error: "Missing 'input' in request body." },
+      { status: 400 }
     );
   }
 
-  const agent = await getAgent();
-
-  const result = await agent.invoke({
-    messages: [{ role: "user", content: input }],
-  });
-
-  const output = (() => {
-    const direct =
-        typeof (result as { content?: unknown })?.content === "string"
-            ? (result as unknown as { content: string }).content
-            : null;
-    if (direct) return direct;
-
-    const messages = (result as {
-      messages?: Array<{ content?: unknown; kwargs?: { content?: unknown } }>;
-    })?.messages;
-
-    if (Array.isArray(messages) && messages.length > 0) {
-      const last = messages[messages.length - 1];
-      if (typeof last?.content === "string") return last.content;
-      if (typeof last?.kwargs?.content === "string") return last.kwargs.content;
-    }
-
-    return JSON.stringify(result);
-  })();
-
+  const output = await runAgent(input);
   return Response.json({ output });
 }

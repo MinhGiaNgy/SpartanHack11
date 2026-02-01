@@ -1,8 +1,10 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { AlertTriangle, Siren, Megaphone, Car } from 'lucide-react';
 
 // Import Types and Dummy Data (in a real app, data would be fetched here)
 import { DUMMY_DATA, Incident } from '../lib/data';
@@ -20,6 +22,33 @@ const Map = dynamic(() => import('../components/Map'), {
 export default function MapPage() {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [activeIncident, setActiveIncident] = useState<Incident | null>(null);
+    const [filterDuration, setFilterDuration] = useState<'1day' | '1week' | '1month' | '3months' | 'all'>('1month');
+
+    const searchParams = useSearchParams();
+    const autoReport = searchParams.get('action') === 'report';
+
+    // Filter Incidents Logic
+    const getFilteredIncidents = () => {
+        const now = new Date();
+        const msPerDay = 24 * 60 * 60 * 1000;
+
+        return incidents.filter(incident => {
+            const incidentDate = new Date(incident.timestamp);
+            const diffTime = Math.abs(now.getTime() - incidentDate.getTime());
+            const diffDays = Math.ceil(diffTime / msPerDay);
+
+            switch (filterDuration) {
+                case '1day': return diffDays <= 1;
+                case '1week': return diffDays <= 7;
+                case '1month': return diffDays <= 30;
+                case '3months': return diffDays <= 90;
+                case 'all': return true;
+                default: return true;
+            }
+        });
+    };
+
+    const filteredIncidents = getFilteredIncidents();
 
     // Fetch Incidents on Load
     useEffect(() => {
@@ -92,6 +121,20 @@ export default function MapPage() {
         setActiveIncident(newIncident); // Optional: select the new incident
     };
 
+    const getIncidentIcon = (type: string) => {
+        switch (type) {
+            case 'robbery':
+            case 'assault':
+                return <Siren className="w-5 h-5 text-red-600" />;
+            case 'traffic':
+                return <Car className="w-5 h-5 text-orange-600" />;
+            case 'harassment':
+                return <Megaphone className="w-5 h-5 text-yellow-600" />;
+            default:
+                return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
+        }
+    };
+
     return (
         <div className="page p-6 md:p-12 h-screen flex flex-col overflow-hidden">
             <div className="orb one" />
@@ -120,13 +163,26 @@ export default function MapPage() {
             <main className="flex-1 relative z-10 grid grid-cols-1 md:grid-cols-[350px_1fr] gap-6 min-h-0">
                 {/* Sidebar Panel */}
                 <div className="panel flex flex-col h-full overflow-hidden">
-                    <div className="p-4 border-b border-black/5 bg-white/50 backdrop-blur-sm">
-                        <h2 className="font-bold text-lg text-[var(--forest)]">Recent Reports</h2>
-                        <p className="text-xs text-slate">select an item to view on map</p>
+                    <div className="p-4 border-b border-black/5 bg-white/50 backdrop-blur-sm flex justify-between items-center">
+                        <div>
+                            <h2 className="font-bold text-lg text-[var(--forest)]">Recent Reports</h2>
+                            <p className="text-xs text-[var(--slate)]">select an item to view on map</p>
+                        </div>
+                        <select
+                            value={filterDuration}
+                            onChange={(e) => setFilterDuration(e.target.value as any)}
+                            className="bg-white border border-black/10 rounded-lg text-xs px-2 py-1 text-[var(--ink)] focus:outline-none focus:border-[var(--forest)]"
+                        >
+                            <option value="1day">24 Hours</option>
+                            <option value="1week">1 Week</option>
+                            <option value="1month">1 Month</option>
+                            <option value="3months">3 Months</option>
+                            <option value="all">All Time</option>
+                        </select>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                        {incidents.map((incident) => (
+                        {filteredIncidents.map((incident) => (
                             <button
                                 key={incident.id}
                                 onClick={() => handleIncidentSelect(incident)}
@@ -142,7 +198,9 @@ export default function MapPage() {
                                             ? 'bg-white/20 text-white'
                                             : incident.type === 'robbery' || incident.type === 'assault'
                                                 ? 'bg-red-100 text-red-700'
-                                                : 'bg-yellow-100 text-yellow-700'
+                                                : incident.type === 'traffic'
+                                                    ? 'bg-orange-100 text-orange-700'
+                                                    : 'bg-yellow-100 text-yellow-700'
                                         }`}
                                     >
                                         {incident.type}
@@ -152,13 +210,20 @@ export default function MapPage() {
                                     </span>
                                 </div>
 
-                                <h3 className={`font-bold mb-1 ${activeIncident?.id === incident.id ? 'text-white' : 'text-[var(--ink)]'}`}>
-                                    {incident.name}
-                                </h3>
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-1 flex-shrink-0">
+                                        {getIncidentIcon(incident.type)}
+                                    </div>
+                                    <div>
+                                        <h3 className={`font-bold mb-1 ${activeIncident?.id === incident.id ? 'text-white' : 'text-[var(--ink)]'}`}>
+                                            {incident.name}
+                                        </h3>
 
-                                <p className={`text-sm line-clamp-2 ${activeIncident?.id === incident.id ? 'text-white/80' : 'text-[var(--slate)]'}`}>
-                                    {incident.details}
-                                </p>
+                                        <p className={`text-sm line-clamp-2 ${activeIncident?.id === incident.id ? 'text-white/80' : 'text-[var(--slate)]'}`}>
+                                            {incident.details}
+                                        </p>
+                                    </div>
+                                </div>
                             </button>
                         ))}
                     </div>
@@ -167,10 +232,11 @@ export default function MapPage() {
                 {/* Map Panel */}
                 <div className="panel p-2 h-full min-h-[400px] overflow-hidden">
                     <Map
-                        incidents={incidents}
+                        incidents={filteredIncidents}
                         activeIncident={activeIncident}
                         onIncidentClick={handleIncidentSelect}
                         onIncidentAdded={handleIncidentAdded}
+                        autoReport={autoReport}
                     />
                 </div>
             </main>

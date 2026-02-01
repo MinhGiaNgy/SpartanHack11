@@ -4,7 +4,7 @@ import { z } from "zod";
 export interface IncidentDto {
   id: string;
   name: string;
-  type: "robbery" | "assault" | "harassment" | "other";
+  type: "robbery" | "assault" | "harassment" | "traffic" | "other";
   details: string;
   location: {
     lat: number;
@@ -20,7 +20,7 @@ export const GetIncidentsSchema = z.object({
 
 export const CreateIncidentSchema = z.object({
   name: z.string().optional(),
-  type: z.enum(["robbery", "assault", "harassment", "other"]).optional(),
+  type: z.enum(["robbery", "assault", "harassment", "traffic", "other"]).optional(),
   details: z.string().optional(),
   image: z.string().optional(),
   location: z.object({
