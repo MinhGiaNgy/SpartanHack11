@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { AlertTriangle, Siren, Megaphone, Car } from 'lucide-react';
 
 // Import Types and Dummy Data (in a real app, data would be fetched here)
 import { DUMMY_DATA, Incident } from '../lib/data';
@@ -73,6 +74,20 @@ export default function MapPage() {
     const handleIncidentAdded = (newIncident: Incident) => {
         setIncidents(prev => [newIncident, ...prev]);
         setActiveIncident(newIncident); // Optional: select the new incident
+    };
+
+    const getIncidentIcon = (type: string) => {
+        switch (type) {
+            case 'robbery':
+            case 'assault':
+                return <Siren className="w-5 h-5 text-red-600" />;
+            case 'traffic':
+                return <Car className="w-5 h-5 text-orange-600" />;
+            case 'harassment':
+                return <Megaphone className="w-5 h-5 text-yellow-600" />;
+            default:
+                return <AlertTriangle className="w-5 h-5 text-yellow-600" />;
+        }
     };
 
     return (
@@ -150,13 +165,20 @@ export default function MapPage() {
                                     </span>
                                 </div>
 
-                                <h3 className={`font-bold mb-1 ${activeIncident?.id === incident.id ? 'text-white' : 'text-[var(--ink)]'}`}>
-                                    {incident.name}
-                                </h3>
+                                <div className="flex items-start gap-3">
+                                    <div className="mt-1 flex-shrink-0">
+                                        {getIncidentIcon(incident.type)}
+                                    </div>
+                                    <div>
+                                        <h3 className={`font-bold mb-1 ${activeIncident?.id === incident.id ? 'text-white' : 'text-[var(--ink)]'}`}>
+                                            {incident.name}
+                                        </h3>
 
-                                <p className={`text-sm line-clamp-2 ${activeIncident?.id === incident.id ? 'text-white/80' : 'text-[var(--slate)]'}`}>
-                                    {incident.details}
-                                </p>
+                                        <p className={`text-sm line-clamp-2 ${activeIncident?.id === incident.id ? 'text-white/80' : 'text-[var(--slate)]'}`}>
+                                            {incident.details}
+                                        </p>
+                                    </div>
+                                </div>
                             </button>
                         ))}
                     </div>

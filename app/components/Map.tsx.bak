@@ -276,95 +276,183 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
         <>
             {clusters.map((cluster) => {
                 const [lng, lat] = cluster.geometry.coordinates;
-                const { cluster: isCluster, point_count: pointCount, incidentId } = cluster.properties;
+                {
+                    clusters.map((cluster) => {
+                        const [lng, lat] = cluster.geometry.coordinates;
+                        const { cluster: isCluster, point_count: pointCount, incidentId } = cluster.properties;
 
-                if (isCluster) {
-                    const leaves = superclusterRef.current?.getLeaves(cluster.id, Infinity) ?? [];
-                    const hasHighSeverity = leaves.some((leaf: any) =>
-                        leaf.type === 'robbery' || leaf.type === 'assault'
-                    );
+                        if (isCluster) {
+                            const leaves = superclusterRef.current?.getLeaves(cluster.id, Infinity) ?? [];
+                            const hasHighSeverity = leaves.some((leaf: any) =>
+                                leaf.type === 'robbery' || leaf.type === 'assault'
+                            );
 
-                    const radius = 30 + (pointCount / incidents.length) * 20;
+                            const radius = 30 + (pointCount / incidents.length) * 20;
 
-                    return (
-                        <Marker
-                            key={`cluster-${cluster.id}`}
-                            position={[lat, lng]}
-                            icon={L.divIcon({
-                                html: `<div class="flex items-center justify-center w-full h-full rounded-full border-4 border-white shadow-lg text-white font-bold ${hasHighSeverity ? 'bg-red-500' : 'bg-yellow-500'
-                                    }" style="width: ${radius}px; height: ${radius}px;">
+                            return (
+                                <Marker
+                                    key={`cluster-${cluster.id}`}
+                                    position={[lat, lng]}
+                                    icon={L.divIcon({
+                                        html: `<div class="flex items-center justify-center w-full h-full rounded-full border-4 border-white shadow-lg text-white font-bold ${hasHighSeverity ? 'bg-red-500' : 'bg-yellow-500'
+                                            }" style="width: ${radius}px; height: ${radius}px;">
                                     ${pointCount}
                                 </div>`,
-                                className: 'marker-cluster-custom',
-                                iconSize: [radius, radius]
-                            })}
-                            eventHandlers={{
-                                click: () => {
-                                    const expansionZoom = Math.min(
-                                        superclusterRef.current.getClusterExpansionZoom(cluster.id),
-                                        17
-                                    );
-                                    map.setView([lat, lng], expansionZoom, { animate: true });
-                                }
-                            }}
-                        />
-                    );
+                                        className: 'marker-cluster-custom',
+                                        iconSize: [radius, radius]
+                                    })}
+                                    eventHandlers={{
+                                        click: () => {
+                                            const expansionZoom = Math.min(
+                                                superclusterRef.current.getClusterExpansionZoom(cluster.id),
+                                                17
+                                            );
+                                            map.setView([lat, lng], expansionZoom, { animate: true });
+                                        }
+                                    }}
+                                />
+                            );
+                        }
+
+                        const incident = incidents.find(i => i.id === incidentId);
+                        if (!incident) return null;
+
+                        const isHighSeverity = incident.type === 'robbery' || incident.type === 'assault';
+
+                        return (
+                            <div key={`incident-${incident.id}`}>
+                                <Circle
+                                    center={[incident.location.lat, incident.location.lng]}
+                                    pathOptions={{
+                                        color: isHighSeverity ? '#ef4444' : '#eab308',
+                                        fillColor: isHighSeverity ? '#ef4444' : '#eab308',
+                                        fillOpacity: 0.2,
+                                        stroke: false
+                                    }}
+                                    radius={isHighSeverity ? 300 : 150}
+                                />
+                                <Marker
+                                    position={[incident.location.lat, incident.location.lng]}
+                                    icon={createCustomIcon(incident.type)}
+                                    ref={el => { markersRef.current[incident.id] = el; }}
+                                    eventHandlers={{
+                                        click: () => onIncidentClick(incident)
+                                    }}
+                                >
+                                    <Popup minWidth={280}>
+                                        <div className="p-1 space-y-2">
+                                            {incident.image && (
+                                                <div className="w-full h-32 mb-2 rounded-lg overflow-hidden relative bg-[var(--stone)]">
+                                                    <img src={incident.image} alt="Incident" className="w-full h-full object-cover" />
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center gap-2 mb-2">
+                                                {/* Icon Logic */}
+                                                {incident.type === 'robbery' || incident.type === 'assault' ? (
+                                                    <Siren className="w-5 h-5 text-red-600" />
+                                                ) : incident.type === 'traffic' ? (
+                                                    <Car className="w-5 h-5 text-orange-600" />
+                                                ) : incident.type === 'harassment' ? (
+                                                    <Megaphone className="w-5 h-5 text-yellow-600" />
+                                                ) : (
+                                                    <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                                                )}
+                                                <h3 className="font-bold text-lg leading-none">{incident.name}</h3>
+                                            </div>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--slate)]">{incident.type}</p>
+                                            <p className="text-sm text-[var(--ink)] bg-[var(--stone)]/30 p-2 rounded border border-[var(--stone)]">{incident.details}</p>
+                                            <p className="text-[10px] text-[var(--slate)]/80 text-right">{new Date(incident.timestamp).toLocaleDateString()}</p>
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            </div>
+                        );
+                    })
                 }
+                const isDangerZone = hasHighDensityInTimeWindow(cluster.properties.timestamps);
+                const radius = isDangerZone
+                    ? getClusterRadius(cluster.id, [lng, lat])
+                    : 60;
+
+                const opacity = isDangerZone ? 0.3 : 0.15;
+                return (
+                    <Circle
+                        key={`cluster-${cluster.id}`}
+                        center={[lat, lng]}
+                        pathOptions={{
+                            color: isHighSeverity ? '#ef4444' : '#eab308',
+                            fillColor: isHighSeverity ? '#ef4444' : '#eab308',
+                            fillOpacity: opacity,
+                            stroke: false
+                        }}
+                        radius={radius}
+                        eventHandlers={{
+                            click: () => {
+                                const expansionZoom = Math.min(
+                                    superclusterRef.current.getClusterExpansionZoom(cluster.id),
+                                    17
+                                );
+                                map.setView([lat, lng], expansionZoom, { animate: true });
+                            }
+                        }}
+                    />
+                );
+            }
 
                 const incident = incidents.find(i => i.id === incidentId);
-                if (!incident) return null;
+            if (!incident) return null;
 
-                const isHighSeverity = incident.type === 'robbery' || incident.type === 'assault';
+            const isHighSeverity = incident.type === 'robbery' || incident.type === 'assault';
 
-                return (
-                    <div key={`incident-${incident.id}`}>
-                        <Circle
-                            center={[incident.location.lat, incident.location.lng]}
-                            pathOptions={{
-                                color: isHighSeverity ? '#ef4444' : '#eab308',
-                                fillColor: isHighSeverity ? '#ef4444' : '#eab308',
-                                fillOpacity: 0.2,
-                                stroke: false
-                            }}
-                            radius={isHighSeverity ? 300 : 150}
-                        />
-                        <Marker
-                            position={[incident.location.lat, incident.location.lng]}
-                            icon={createCustomIcon(incident.type)}
-                            ref={el => { markersRef.current[incident.id] = el; }}
-                            eventHandlers={{
-                                click: () => onIncidentClick(incident)
-                            }}
-                        >
-                            <Popup minWidth={280}>
-                                <div className="p-1 space-y-2">
-                                    {incident.image && (
-                                        <div className="w-full h-32 mb-2 rounded-lg overflow-hidden relative bg-[var(--stone)]">
-                                            <img src={incident.image} alt="Incident" className="w-full h-full object-cover" />
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center gap-2 mb-2">
-                                        {/* Icon Logic */}
-                                        {incident.type === 'robbery' || incident.type === 'assault' ? (
-                                            <Siren className="w-5 h-5 text-red-600" />
-                                        ) : incident.type === 'traffic' ? (
-                                            <Car className="w-5 h-5 text-orange-600" />
-                                        ) : incident.type === 'harassment' ? (
-                                            <Megaphone className="w-5 h-5 text-yellow-600" />
-                                        ) : (
-                                            <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                                        )}
-                                        <h3 className="font-bold text-lg leading-none">{incident.name}</h3>
-                                    </div>
-                                    <p className="text-xs font-semibold uppercase tracking-wider text-[var(--slate)]">{incident.type}</p>
-                                    <p className="text-sm text-[var(--ink)] bg-[var(--stone)]/30 p-2 rounded border border-[var(--stone)]">{incident.details}</p>
-                                    <p className="text-[10px] text-[var(--slate)]/80 text-right">{new Date(incident.timestamp).toLocaleDateString()}</p>
+            return (
+            <div key={`incident-${incident.id}`}>
+                <Circle
+                    center={[incident.location.lat, incident.location.lng]}
+                    pathOptions={{
+                        color: isHighSeverity ? '#ef4444' : '#eab308',
+                        fillColor: isHighSeverity ? '#ef4444' : '#eab308',
+                        fillOpacity: 0.2,
+                        stroke: false
+                    }}
+                    radius={isHighSeverity ? 300 : 150}
+                />
+                <Marker
+                    position={[incident.location.lat, incident.location.lng]}
+                    ref={el => { markersRef.current[incident.id] = el; }}
+                    eventHandlers={{
+                        click: () => onIncidentClick(incident)
+                    }}
+                >
+                    <Popup minWidth={280}>
+                        <div className="p-1 space-y-2">
+                            {incident.image && (
+                                <div className="w-full h-32 mb-2 rounded-lg overflow-hidden relative bg-[var(--stone)]">
+                                    <img src={incident.image} alt="Incident" className="w-full h-full object-cover" />
                                 </div>
-                            </Popup>
-                        </Marker>
-                    </div>
-                );
+                            )}
+
+                            <div className="flex items-center gap-2 mb-2">
+                                {/* Icon Logic */}
+                                {incident.type === 'robbery' || incident.type === 'assault' ? (
+                                    <Siren className="w-5 h-5 text-red-600" />
+                                ) : incident.type === 'traffic' ? (
+                                    <Car className="w-5 h-5 text-orange-600" />
+                                ) : incident.type === 'harassment' ? (
+                                    <Megaphone className="w-5 h-5 text-yellow-600" />
+                                ) : (
+                                    <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                                )}
+                                <h3 className="font-bold text-lg leading-none">{incident.name}</h3>
+                            </div>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--slate)]">{incident.type}</p>
+                            <p className="text-sm text-[var(--ink)] bg-[var(--stone)]/30 p-2 rounded border border-[var(--stone)]">{incident.details}</p>
+                            <p className="text-[10px] text-[var(--slate)]/80 text-right">{new Date(incident.timestamp).toLocaleDateString()}</p>
+                        </div>
+                    </Popup>
+                </Marker>
+            </div>
+            );
             })}
 
             {position && (
