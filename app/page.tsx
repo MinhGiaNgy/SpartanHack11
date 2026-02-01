@@ -65,7 +65,7 @@ export default function Home() {
               MSU · East Lansing Safety Map
             </p>
           </div>
-        </div>
+        </div>                                                                                        
         <nav className="hidden items-center gap-6 text-sm font-medium text-[var(--slate)] md:flex">
           <span>Live Map</span>
           <span>Safety Scores</span>
