@@ -128,10 +128,15 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
         moveend: updateClusters
     });
 
-    // Initial load
+    const newMarkerRef = useRef<L.Marker>(null);
     useEffect(() => {
-        updateClusters();
-    }, []);
+        if (position && newMarkerRef.current) {
+            const timer = setTimeout(() => {
+                newMarkerRef.current?.openPopup();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [position]);
 
     // Helper to get cluster radius (distance to furthest leaf)
     const getClusterRadius = (clusterId: number, center: [number, number]) => {
@@ -149,19 +154,6 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
         });
 
         return Math.max(maxDist + 50, 150); // Minimum 150m buffer
-    };
-
-    // ... (handleImageChange, handleSubmit, etc.)
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // ... same as before
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setForm(prev => ({ ...prev, image: reader.result as string }));
-            };
-            reader.readAsDataURL(file);
-        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -187,8 +179,6 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
 
                 // Update parent state
                 onIncidentAdded(savedIncident);
-
-                alert("Report submitted successfully!");
             } else {
                 alert("Failed to save report.");
             }
@@ -209,11 +199,6 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
         });
     }, []);
 
-    const newMarkerRef = useRef<L.Marker>(null);
-    useEffect(() => {
-        if (position && newMarkerRef.current) newMarkerRef.current.openPopup();
-    }, [position]);
-
     const markersRef = useRef<{ [key: string | number]: L.Marker | null }>({});
     useEffect(() => {
         if (activeIncident && markersRef.current[activeIncident.id]) {
@@ -224,20 +209,16 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
 
     return (
         <>
-            {/* Render Clusters and Points */}
             {clusters.map((cluster) => {
                 const [lng, lat] = cluster.geometry.coordinates;
                 const { cluster: isCluster, point_count: pointCount, incidentId } = cluster.properties;
 
                 if (isCluster) {
                     const isHighSeverity = cluster.properties.severityScore >= 2;
-                    // Density & Time Threshold Logic
                     const isDangerZone = hasHighDensityInTimeWindow(cluster.properties.timestamps);
-
-                    // If high density in time, calculate full radius. If not, use small fixed radius.
                     const radius = isDangerZone
                         ? getClusterRadius(cluster.id, [lng, lat])
-                        : 60; // Small fixed radius for low density/spread out clusters
+                        : 60;
 
                     const opacity = isDangerZone ? 0.3 : 0.15;
                     return (
@@ -253,7 +234,6 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
                             radius={radius}
                             eventHandlers={{
                                 click: () => {
-                                    // Zoom in on click
                                     const expansionZoom = Math.min(
                                         superclusterRef.current.getClusterExpansionZoom(cluster.id),
                                         17
@@ -265,7 +245,6 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
                     );
                 }
 
-                // It's a single point (Leaf)
                 const incident = incidents.find(i => i.id === incidentId);
                 if (!incident) return null;
 
@@ -273,7 +252,6 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
 
                 return (
                     <div key={`incident-${incident.id}`}>
-                        {/* Danger Zone Circle for single point */}
                         <Circle
                             center={[incident.location.lat, incident.location.lng]}
                             pathOptions={{
@@ -284,7 +262,6 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
                             }}
                             radius={isHighSeverity ? 300 : 150}
                         />
-                        {/* The Marker */}
                         <Marker
                             position={[incident.location.lat, incident.location.lng]}
                             ref={el => { markersRef.current[incident.id] = el; }}
@@ -293,11 +270,9 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
                             }}
                         >
                             <Popup minWidth={280}>
-                                {/* ... Popup Content (Duplicated from before, abbreviated here for brevity if needed) ... */}
                                 <div className="p-1 space-y-2">
                                     {incident.image && (
-                                        <div className="w-full h-32 mb-2 rounded-lg overflow-hidden relative bg-gray-100">
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <div className="w-full h-32 mb-2 rounded-lg overflow-hidden relative bg-[var(--stone)]">
                                             <img src={incident.image} alt="Incident" className="w-full h-full object-cover" />
                                         </div>
                                     )}
@@ -305,9 +280,9 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
                                         <div className={`w-3 h-3 rounded-full ${isHighSeverity ? 'bg-red-500' : 'bg-yellow-500'}`} />
                                         <h3 className="font-bold text-lg leading-none">{incident.name}</h3>
                                     </div>
-                                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{incident.type}</p>
-                                    <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">{incident.details}</p>
-                                    <p className="text-[10px] text-gray-400 text-right">{new Date(incident.timestamp).toLocaleDateString()}</p>
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-[var(--slate)]">{incident.type}</p>
+                                    <p className="text-sm text-[var(--ink)] bg-[var(--stone)]/30 p-2 rounded border border-[var(--stone)]">{incident.details}</p>
+                                    <p className="text-[10px] text-[var(--slate)]/80 text-right">{new Date(incident.timestamp).toLocaleDateString()}</p>
                                 </div>
                             </Popup>
                         </Marker>
@@ -315,45 +290,28 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
                 );
             })}
 
-            {/* Current "New Report" Marker */}
             {position && (
                 <Marker position={position} ref={newMarkerRef}>
                     <Popup minWidth={300}>
-                        {/* ... Form Content ... */}
                         <div className="p-1">
-                            {/* ... same logic as before ... */}
                             {submittedData ? (
                                 <div className="space-y-2">
-                                    {/* ... Data Preview ... */}
                                     <h3 className="font-bold text-lg">{submittedData.name}</h3>
-                                    <p className="text-gray-600">{submittedData.details}</p>
-                                    <button onClick={() => setSubmittedData(null)} className="text-xs text-forest hover:underline w-full">Edit Report</button>
+                                    <p className="text-[var(--slate)]">{submittedData.details}</p>
+                                    <button onClick={() => setSubmittedData(null)} className="text-xs text-[var(--forest)] hover:underline w-full">Edit Report</button>
                                 </div>
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-3">
                                     <h3 className="font-semibold border-b pb-2">Report Incident</h3>
-
-                                    {/* Image Upload */}
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-gray-600">Evidence</label>
-                                        <div className="flex gap-2">
-                                            <label className="flex-1 cursor-pointer p-2 border border-dashed rounded hover:bg-gray-50 flex justify-center">
-                                                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                                                <span className="text-xs text-gray-500">{form.image ? 'Change' : 'Upload'}</span>
-                                            </label>
-                                        </div>
-                                        {form.image && <img src={form.image} className="h-10 w-full object-cover rounded mt-1" />}
-                                    </div>
-
-                                    <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Title" className="w-full text-sm p-2 border rounded" />
-                                    <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as any })} className="w-full text-sm p-2 border rounded bg-white">
+                                    <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Title" className="w-full text-sm p-2 border rounded text-[var(--ink)] placeholder-[var(--slate)]/70" />
+                                    <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as any })} className="w-full text-sm p-2 border rounded bg-white text-[var(--ink)]">
                                         <option value="other">Other</option>
                                         <option value="robbery">Robbery</option>
                                         <option value="assault">Assault</option>
                                         <option value="harassment">Harassment</option>
                                     </select>
-                                    <textarea required value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} placeholder="Details" className="w-full text-sm p-2 border rounded" rows={2} />
-                                    <button type="submit" className="w-full py-2 bg-forest text-white rounded text-sm font-semibold">Submit</button>
+                                    <textarea required value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} placeholder="Details" className="w-full text-sm p-2 border rounded text-[var(--ink)] placeholder-[var(--slate)]/70" rows={2} />
+                                    <button type="submit" className="w-full py-2 bg-[var(--forest)] text-white rounded text-sm font-semibold hover:bg-[var(--forest-dark)] transition-colors">Submit</button>
                                 </form>
                             )}
                         </div>
