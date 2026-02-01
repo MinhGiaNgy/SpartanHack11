@@ -16,7 +16,7 @@ const SYSTEM_PROMPT =
   "(2-3 concise sentences)\n\n" +
   "## Trends\n" +
   "- (1-4 bullet points)\n\n" +
-  "## Notable incidents (max 5)\n" +
+  "## Notable incidents\n" +
   "- **YYYY-MM-DD HH:mm (local)** - TYPE - GENERAL LOCATION - SOURCE/AGENCY\n\n" +
   "## Safety implication\n" +
   "- (one clear, practical sentence)\n\n" +
