@@ -34,11 +34,6 @@ export default function LiveCrimeStats({
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(refreshStats, 4000);
-    return () => clearInterval(interval);
-  }, [refreshStats]);
-
-  useEffect(() => {
     let active = true;
     let socket: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -47,6 +42,10 @@ export default function LiveCrimeStats({
       if (!active) return;
       const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
       socket = new WebSocket(`${protocol}://${window.location.host}/ws`);
+
+      socket.onopen = () => {
+        refreshStats();
+      };
 
       socket.onmessage = (event) => {
         try {
