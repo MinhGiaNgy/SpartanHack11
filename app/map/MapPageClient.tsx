@@ -20,6 +20,7 @@ const Map = dynamic(() => import('../components/Map'), {
 export default function MapPageClient() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [activeIncident, setActiveIncident] = useState<Incident | null>(null);
+  const [reportTrigger, setReportTrigger] = useState<number>(0);
   const [filterDuration, setFilterDuration] = useState<
     '1day' | '1week' | '1month' | '3months' | 'all'
   >('1month');
@@ -141,7 +142,7 @@ export default function MapPageClient() {
   };
 
   return (
-    <div className="page p-6 md:p-12 h-screen flex flex-col overflow-hidden">
+    <div className="page p-3 md:p-12 h-screen flex flex-col overflow-hidden">
       <div className="orb one" />
       <div className="orb two" />
 
@@ -154,24 +155,22 @@ export default function MapPageClient() {
             Explore reports and add your own.
           </p>
         </div>
-        <div className="flex gap-3">
-          <button
-            className="btn btn-primary"
-            onClick={() =>
-              alert('Click on any location on the map to manually report an incident.')
-            }
-          >
-            Report Incident
-          </button>
-          <Link href="/" prefetch={false} className="btn btn-ghost hover:bg-white/50">
-            Back to Home
-          </Link>
-        </div>
+        <Link href="/" prefetch={false} className="btn btn-ghost hover:bg-white/50">
+          Back to Home
+        </Link>
       </header>
 
-      <main className="flex-1 relative z-10 grid grid-cols-1 md:grid-cols-[350px_1fr] gap-6 min-h-0">
-        <div className="panel flex flex-col h-full overflow-hidden">
-          <div className="p-4 border-b border-black/5 bg-white/50 backdrop-blur-sm flex justify-between items-center">
+      <button
+        className="fixed bottom-24 right-6 z-50 bg-[var(--forest)] text-white shadow-lg rounded-full px-4 py-3 font-semibold text-sm flex items-center gap-2 hover:bg-[var(--forest-dark)] hover:scale-105 transition-all"
+        onClick={() => setReportTrigger(Date.now())}
+      >
+        <span className="text-xl leading-none">+</span>
+        Report Incident
+      </button>
+
+      <main className="flex-1 relative z-10 flex flex-col-reverse md:grid md:grid-cols-[350px_1fr] gap-4 md:gap-6 min-h-0 overflow-hidden">
+        <div className="panel flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="p-4 border-b border-black/5 bg-white/50 backdrop-blur-sm flex justify-between items-center flex-none">
             <div>
               <h2 className="font-bold text-lg text-[var(--forest)]">Recent Reports</h2>
               <p className="text-xs text-[var(--slate)]">select an item to view on map</p>
@@ -195,33 +194,30 @@ export default function MapPageClient() {
                 key={incident.id}
                 onClick={() => handleIncidentSelect(incident)}
                 className={`w-full text-left p-3 rounded-xl border transition-all duration-200 group
-                  ${
-                    activeIncident?.id === incident.id
-                      ? 'bg-[var(--forest)] text-white border-[var(--forest)] shadow-lg scale-[1.02]'
-                      : 'bg-white border-black/5 hover:border-[var(--forest)] hover:shadow-md'
+                  ${activeIncident?.id === incident.id
+                    ? 'bg-[var(--forest)] text-white border-[var(--forest)] shadow-lg scale-[1.02]'
+                    : 'bg-white border-black/5 hover:border-[var(--forest)] hover:shadow-md'
                   }`}
               >
                 <div className="flex justify-between items-start mb-1">
                   <span
                     className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full
-                    ${
-                      activeIncident?.id === incident.id
+                    ${activeIncident?.id === incident.id
                         ? 'bg-white/20 text-white'
                         : incident.type === 'robbery' || incident.type === 'assault'
-                        ? 'bg-red-100 text-red-700'
-                        : incident.type === 'traffic'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}
+                          ? 'bg-red-100 text-red-700'
+                          : incident.type === 'traffic'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                      }`}
                   >
                     {incident.type}
                   </span>
                   <span
-                    className={`text-[10px] ${
-                      activeIncident?.id === incident.id
-                        ? 'text-white/70'
-                        : 'text-[var(--slate)]'
-                    }`}
+                    className={`text-[10px] ${activeIncident?.id === incident.id
+                      ? 'text-white/70'
+                      : 'text-[var(--slate)]'
+                      }`}
                   >
                     {new Date(incident.timestamp).toLocaleDateString()}
                   </span>
@@ -231,19 +227,17 @@ export default function MapPageClient() {
                   <div className="mt-1 flex-shrink-0">{getIncidentIcon(incident.type)}</div>
                   <div>
                     <h3
-                      className={`font-bold mb-1 ${
-                        activeIncident?.id === incident.id ? 'text-white' : 'text-[var(--ink)]'
-                      }`}
+                      className={`font-bold mb-1 ${activeIncident?.id === incident.id ? 'text-white' : 'text-[var(--ink)]'
+                        }`}
                     >
                       {incident.name}
                     </h3>
 
                     <p
-                      className={`text-sm line-clamp-2 ${
-                        activeIncident?.id === incident.id
-                          ? 'text-white/80'
-                          : 'text-[var(--slate)]'
-                      }`}
+                      className={`text-sm line-clamp-2 ${activeIncident?.id === incident.id
+                        ? 'text-white/80'
+                        : 'text-[var(--slate)]'
+                        }`}
                     >
                       {incident.details}
                     </p>
@@ -254,16 +248,17 @@ export default function MapPageClient() {
           </div>
         </div>
 
-        <div className="panel p-2 h-full min-h-[400px] overflow-hidden">
+        <div className="panel p-2 h-[45vh] md:h-full min-h-[300px] flex-none md:flex-auto overflow-hidden">
           <Map
             incidents={filteredIncidents}
             activeIncident={activeIncident}
             onIncidentClick={handleIncidentSelect}
             onIncidentAdded={handleIncidentAdded}
             autoReport={autoReport}
+            reportTrigger={reportTrigger}
           />
         </div>
       </main>
-    </div>
+    </div >
   );
 }

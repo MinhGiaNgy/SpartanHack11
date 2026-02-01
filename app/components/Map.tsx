@@ -22,7 +22,12 @@ function MapController({ activeIncident }: { activeIncident: Incident | null }) 
         if (activeIncident) {
             const zoom = 16;
             const targetPoint = map.project([activeIncident.location.lat, activeIncident.location.lng], zoom);
-            targetPoint.y -= 150; // Shift for popup visibility
+
+            // Dynamic offset: shift by 25% of map height to ensure popup (which opens ABOVE marker) is visible
+            // Reduce offset slightly on very small screens if needed, but 25% is usually safe.
+            const offset = map.getSize().y * 0.25;
+            targetPoint.y -= offset;
+
             const targetLatLng = map.unproject(targetPoint, zoom);
 
             map.flyTo(targetLatLng, zoom, {
@@ -53,10 +58,13 @@ interface LocationMarkerProps {
     onIncidentClick: (incident: Incident) => void;
     onIncidentAdded: (incident: Incident) => void;
     autoReport?: boolean;
+    reportTrigger?: number;
+    centerTrigger?: number;
+    readOnly?: boolean;
 }
 
 // Component to handle map clicks and rendering
-function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded, autoReport }: LocationMarkerProps) {
+function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded, autoReport, reportTrigger, centerTrigger, readOnly }: LocationMarkerProps) {
     const map = useMap();
     const [position, setPosition] = useState<L.LatLng | null>(null);
     const [form, setForm] = useState<IncidentForm>({
@@ -111,6 +119,40 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
         }
     }, [autoReport, map]);
 
+    // Handle center on me trigger
+    useEffect(() => {
+        if (centerTrigger && centerTrigger > 0 && map) {
+            map.locate({
+                setView: true,
+                maxZoom: 15,
+                enableHighAccuracy: true
+            });
+
+            // Handle errors for Center on me
+            map.once("locationerror", (e) => {
+                console.error("Locate failed:", e);
+                if (e.code === 1) alert("Please enable location services to center on your position.");
+            });
+        }
+    }, [centerTrigger, map]);
+
+    // Handle manual report button click
+    useEffect(() => {
+        if (reportTrigger && reportTrigger > 0 && map) {
+            map.locate().on("locationfound", (e) => {
+                setPosition(e.latlng);
+                // Dynamic offset for popup
+                const zoom = 16;
+                const targetPoint = map.project(e.latlng, zoom);
+                const offset = map.getSize().y * 0.25;
+                targetPoint.y -= offset;
+                const targetLatLng = map.unproject(targetPoint, zoom);
+
+                map.flyTo(targetLatLng, zoom);
+            });
+        }
+    }, [reportTrigger, map]);
+
     // Update Supercluster when data changes
     useEffect(() => {
         const points = incidents.map(incident => ({
@@ -140,6 +182,7 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
 
     useMapEvents({
         click(e) {
+            if (readOnly) return;
             setPosition(e.latlng);
             setForm({ name: '', type: 'other', details: '', image: '' });
             setSubmittedData(null);
@@ -147,7 +190,11 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
             // Shift map center logic
             const zoom = map.getZoom();
             const targetPoint = map.project(e.latlng, zoom);
-            targetPoint.y -= 250;
+
+            // Dynamic offset for click to report: center popup
+            const offset = map.getSize().y * 0.25;
+            targetPoint.y -= offset;
+
             const targetLatLng = map.unproject(targetPoint, zoom);
             map.flyTo(targetLatLng, zoom);
         },
@@ -355,11 +402,11 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
                                         ) : (
                                             <AlertTriangle className="w-5 h-5 text-yellow-600" />
                                         )}
-                                        <h3 className="font-bold text-lg leading-none">{incident.name}</h3>
+                                        <h3 className="font-medium text-xs md:text-lg leading-none">{incident.name}</h3>
                                     </div>
-                                    <p className="text-xs font-semibold uppercase tracking-wider text-[var(--slate)]">{incident.type}</p>
-                                    <p className="text-sm text-[var(--ink)] bg-[var(--stone)]/30 p-2 rounded border border-[var(--stone)]">{incident.details}</p>
-                                    <p className="text-[10px] text-[var(--slate)]/80 text-right">{new Date(incident.timestamp).toLocaleDateString()}</p>
+                                    <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--slate)]">{incident.type}</p>
+                                    <p className="text-[10px] md:text-sm text-[var(--ink)] bg-[var(--stone)]/30 p-1.5 md:p-2 rounded border border-[var(--stone)] leading-snug">{incident.details}</p>
+                                    <p className="text-[9px] md:text-[10px] text-[var(--slate)]/80 text-right">{new Date(incident.timestamp).toLocaleDateString()}</p>
                                 </div>
                             </Popup>
                         </Marker>
@@ -372,24 +419,24 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
                     <Popup minWidth={300}>
                         <div className="p-1">
                             {submittedData ? (
-                                <div className="space-y-2">
-                                    <h3 className="font-bold text-lg">{submittedData.name}</h3>
-                                    <p className="text-[var(--slate)]">{submittedData.details}</p>
-                                    <button onClick={() => setSubmittedData(null)} className="text-xs text-[var(--forest)] hover:underline w-full">Edit Report</button>
+                                <div className="space-y-1 md:space-y-2">
+                                    <h3 className="font-medium text-xs md:text-lg">{submittedData.name}</h3>
+                                    <p className="text-[var(--slate)] text-[10px] md:text-base leading-snug">{submittedData.details}</p>
+                                    <button onClick={() => setSubmittedData(null)} className="text-[9px] md:text-xs text-[var(--forest)] hover:underline w-full pt-1">Edit Report</button>
                                 </div>
                             ) : (
-                                <form onSubmit={handleSubmit} className="space-y-3">
-                                    <h3 className="font-semibold border-b pb-2">Report Incident</h3>
-                                    <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Title" className="w-full text-sm p-2 border rounded text-[var(--ink)] placeholder-[var(--slate)]/70" />
-                                    <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as any })} className="w-full text-sm p-2 border rounded bg-white text-[var(--ink)]">
+                                <form onSubmit={handleSubmit} className="space-y-1.5 md:space-y-3">
+                                    <h3 className="font-medium border-b pb-0.5 md:pb-1 text-xs md:text-base text-[var(--ink)]">Report Incident</h3>
+                                    <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Title" className="w-full text-[10px] md:text-sm p-1.5 md:p-2 border rounded text-[var(--ink)] placeholder-[var(--slate)]/70 bg-white/50 focus:bg-white" />
+                                    <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as any })} className="w-full text-[10px] md:text-sm p-1.5 md:p-2 border rounded bg-white text-[var(--ink)]">
                                         <option value="other">Other</option>
                                         <option value="robbery">Robbery</option>
                                         <option value="assault">Assault</option>
                                         <option value="harassment">Harassment</option>
                                         <option value="traffic">Traffic</option>
                                     </select>
-                                    <textarea required value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} placeholder="Details" className="w-full text-sm p-2 border rounded text-[var(--ink)] placeholder-[var(--slate)]/70" rows={2} />
-                                    <button type="submit" className="w-full py-2 bg-[var(--forest)] text-white rounded text-sm font-semibold hover:bg-[var(--forest-dark)] transition-colors">Submit</button>
+                                    <textarea required value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} placeholder="Details" className="w-full text-[10px] md:text-sm p-1.5 md:p-2 border rounded text-[var(--ink)] placeholder-[var(--slate)]/70 bg-white/50 focus:bg-white" rows={2} />
+                                    <button type="submit" className="w-full py-1.5 md:py-2 bg-[var(--forest)] text-white rounded text-[10px] md:text-sm font-medium hover:bg-[var(--forest-dark)] transition-colors shadow-sm">Submit</button>
                                 </form>
                             )}
                         </div>
@@ -406,9 +453,12 @@ interface MapProps {
     onIncidentClick?: (incident: Incident) => void;
     onIncidentAdded?: (incident: Incident) => void;
     autoReport?: boolean;
+    reportTrigger?: number;
+    centerTrigger?: number;
+    readOnly?: boolean;
 }
 
-export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { }, onIncidentAdded = () => { }, autoReport = false }: MapProps) {
+export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { }, onIncidentAdded = () => { }, autoReport = false, reportTrigger = 0, centerTrigger = 0, readOnly = false }: MapProps) {
     // Default position (Lansing/East Lansing area for SpartanHack)
     const defaultPosition: [number, number] = [42.7284, -84.4805];
 
@@ -418,7 +468,8 @@ export default function Map({ incidents = [], activeIncident = null, onIncidentC
                 center={defaultPosition}
                 zoom={13}
                 scrollWheelZoom={true}
-                style={{ height: '100%', width: '100%', borderRadius: '20px', zIndex: 0 }}
+                className="w-full h-full rounded-xl md:rounded-[20px] z-0"
+                style={{ height: '100%', width: '100%' }}
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -432,6 +483,9 @@ export default function Map({ incidents = [], activeIncident = null, onIncidentC
                     onIncidentClick={onIncidentClick}
                     onIncidentAdded={onIncidentAdded}
                     autoReport={autoReport}
+                    reportTrigger={reportTrigger}
+                    centerTrigger={centerTrigger}
+                    readOnly={readOnly}
                 />
             </MapContainer>
         </div>
