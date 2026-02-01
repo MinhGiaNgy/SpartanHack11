@@ -33,6 +33,18 @@ function MapController({ activeIncident }: { activeIncident: Incident | null }) 
     return null;
 }
 
+function UserLocationController() {
+    const map = useMap();
+
+    useEffect(() => {
+        map.locate().on("locationfound", function (e) {
+            map.flyTo(e.latlng, 15); // Zoom level 15
+        });
+    }, [map]);
+
+    return null;
+}
+
 interface LocationMarkerProps {
     incidents: Incident[];
     activeIncident: Incident | null;
@@ -346,6 +358,7 @@ export default function Map({ incidents = [], activeIncident = null, onIncidentC
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <MapController activeIncident={activeIncident} />
+                <UserLocationController />
                 <MapLayers
                     incidents={incidents}
                     activeIncident={activeIncident}
