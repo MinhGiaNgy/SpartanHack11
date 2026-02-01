@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { prisma } from "../lib/prisma";
+import LiveCrimeStats from "./components/LiveCrimeStats";
+
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const now = new Date();
@@ -19,12 +22,6 @@ export default async function Home() {
       where: { source: "msu_clery" },
     }),
   ]);
-
-  const crimeStats = [
-    { label: "Reports last 24h", value: reportsLast24h.toString() },
-    { label: "Verified incidents", value: verifiedIncidents.toString() },
-    { label: "Avg response", value: "4 min" },
-  ];
 
   const safetyScores = [
     {
@@ -108,16 +105,10 @@ export default async function Home() {
               <Link href="/map"><button className="btn btn-primary">Open live map</button></Link>
             </div>
 
-            <div className="reveal grid gap-4 sm:grid-cols-3" style={{ animationDelay: "0.3s" }}>
-              {crimeStats.map((stat) => (
-                <div key={stat.label} className="panel p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[var(--slate)]">
-                    {stat.label}
-                  </p>
-                  <p className="font-display text-2xl">{stat.value}</p>
-                </div>
-              ))}
-            </div>
+            <LiveCrimeStats
+              initialReportsLast24h={reportsLast24h}
+              initialVerifiedIncidents={verifiedIncidents}
+            />
 
             <div className="reveal flex flex-wrap gap-2" style={{ animationDelay: "0.35s" }}>
               <span className="chip">Verified by crowd</span>
