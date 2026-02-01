@@ -59,10 +59,12 @@ interface LocationMarkerProps {
     onIncidentAdded: (incident: Incident) => void;
     autoReport?: boolean;
     reportTrigger?: number;
+    centerTrigger?: number;
+    readOnly?: boolean;
 }
 
 // Component to handle map clicks and rendering
-function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded, autoReport, reportTrigger }: LocationMarkerProps) {
+function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded, autoReport, reportTrigger, centerTrigger, readOnly }: LocationMarkerProps) {
     const map = useMap();
     const [position, setPosition] = useState<L.LatLng | null>(null);
     const [form, setForm] = useState<IncidentForm>({
@@ -163,6 +165,7 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
 
     useMapEvents({
         click(e) {
+            if (readOnly) return;
             setPosition(e.latlng);
             setForm({ name: '', type: 'other', details: '', image: '' });
             setSubmittedData(null);
@@ -434,9 +437,11 @@ interface MapProps {
     onIncidentAdded?: (incident: Incident) => void;
     autoReport?: boolean;
     reportTrigger?: number;
+    centerTrigger?: number;
+    readOnly?: boolean;
 }
 
-export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { }, onIncidentAdded = () => { }, autoReport = false, reportTrigger = 0 }: MapProps) {
+export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { }, onIncidentAdded = () => { }, autoReport = false, reportTrigger = 0, centerTrigger = 0, readOnly = false }: MapProps) {
     // Default position (Lansing/East Lansing area for SpartanHack)
     const defaultPosition: [number, number] = [42.7284, -84.4805];
 
@@ -462,6 +467,8 @@ export default function Map({ incidents = [], activeIncident = null, onIncidentC
                     onIncidentAdded={onIncidentAdded}
                     autoReport={autoReport}
                     reportTrigger={reportTrigger}
+                    centerTrigger={centerTrigger}
+                    readOnly={readOnly}
                 />
             </MapContainer>
         </div>
