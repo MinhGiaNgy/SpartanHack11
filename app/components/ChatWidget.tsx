@@ -22,6 +22,22 @@ export default function ChatWidget() {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    const saved =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("spartasafe-chat-open")
+        : null;
+    if (saved !== null) {
+      setOpen(saved === "true");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("spartasafe-chat-open", String(open));
+    }
+  }, [open]);
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 
@@ -70,7 +86,7 @@ export default function ChatWidget() {
                     onClick={() => setOpen(false)}
                     aria-label="Close chat"
                 >
-                  ×
+                  x
                 </button>
               </header>
 
@@ -89,7 +105,7 @@ export default function ChatWidget() {
                     </div>
                 ))}
 
-                {loading && <div className="chat-bubble assistant">Typing…</div>}
+                {loading && <div className="chat-bubble assistant">Typing...</div>}
                 <div ref={endRef} />
               </div>
 
@@ -97,7 +113,7 @@ export default function ChatWidget() {
                 <input
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
-                    placeholder="Ask about Wilson Hall…"
+                    placeholder="Ask about Wilson Hall..."
                     onKeyDown={(event) => {
                       if (event.key === "Enter") sendMessage();
                     }}

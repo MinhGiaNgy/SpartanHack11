@@ -250,7 +250,7 @@ textarea:focus {
 }
 
 .chat-panel {
-  width: min(360px, calc(100vw - 32px));
+  width: min(640px, calc(100vw - 32px));
   border-radius: 20px;
   background: #ffffff;
   border: 1px solid rgba(11, 15, 13, 0.12);
@@ -293,7 +293,7 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 320px;
+  max-height: 560px;
   overflow-y: auto;
   background: #f8fbf8;
 }

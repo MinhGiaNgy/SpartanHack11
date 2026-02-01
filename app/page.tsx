@@ -1,10 +1,28 @@
-import ChatWidget from "./components/ChatWidget";
-import Link from 'next/link';
+import Link from "next/link";
+import { prisma } from "../lib/prisma";
 
-export default function Home() {
+export default async function Home() {
+  const now = new Date();
+  const since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const [reportsLast24h, verifiedIncidents] = await prisma.$transaction([
+    prisma.crimeIncident.count({
+      where: {
+        OR: [
+          { occurredAt: { gte: since } },
+          { reportedAt: { gte: since } },
+          { createdAt: { gte: since } },
+        ],
+      },
+    }),
+    prisma.crimeIncident.count({
+      where: { source: "msu_clery" },
+    }),
+  ]);
+
   const crimeStats = [
-    { label: "Reports last 24h", value: "27" },
-    { label: "Verified incidents", value: "19" },
+    { label: "Reports last 24h", value: reportsLast24h.toString() },
+    { label: "Verified incidents", value: verifiedIncidents.toString() },
     { label: "Avg response", value: "4 min" },
   ];
 
@@ -186,7 +204,6 @@ export default function Home() {
         Built at SpartaHack · Powered by student reports and AI signal detection.
       </footer>
 
-      <ChatWidget />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Sora } from "next/font/google";
+import ChatWidget from "./components/ChatWidget";
 import "./globals.css";
 
 const sora = Sora({ variable: "--font-display", subsets: ["latin"] });
@@ -20,6 +21,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${sora.variable} ${manrope.variable} antialiased`}>
         {children}
+        <ChatWidget />
       </body>
     </html>
   );
