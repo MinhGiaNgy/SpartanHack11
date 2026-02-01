@@ -1,7 +1,7 @@
 import type { CrimeIncident } from "@prisma/client";
 import type { IncidentDto } from "@/server/types/incident";
 
-function determineType(text: string): "robbery" | "assault" | "harassment" | "other" {
+function determineType(text: string): "robbery" | "assault" | "harassment" | "traffic" | "other" {
   const lower = text.toLowerCase();
   if (
     lower.includes("robbery") ||
@@ -22,14 +22,31 @@ function determineType(text: string): "robbery" | "assault" | "harassment" | "ot
     lower.includes("threat")
   )
     return "harassment";
+  if (
+    lower.includes("traffic") ||
+    lower.includes("accident") ||
+    lower.includes("collision") ||
+    lower.includes("crash")
+  )
+    return "traffic";
   return "other";
 }
 
 export function toDto(incident: CrimeIncident & { latitude?: number | null; longitude?: number | null }): IncidentDto {
+  let type: IncidentDto["type"] = determineType(incident.description);
+
+  // Use explicit type from user submission if available
+  if (incident.raw && typeof incident.raw === "object" && !Array.isArray(incident.raw)) {
+    const rawData = incident.raw as any;
+    if (rawData.type && ["robbery", "assault", "harassment", "traffic", "other"].includes(rawData.type)) {
+      type = rawData.type;
+    }
+  }
+
   return {
     id: incident.id,
     name: incident.offenseCode || `Incident ${incident.incidentNum}` || "Reported Incident",
-    type: determineType(incident.description),
+    type,
     details: incident.description,
     location: {
       lat: incident.latitude || 0,

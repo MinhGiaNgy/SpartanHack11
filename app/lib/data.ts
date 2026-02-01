@@ -1,4 +1,4 @@
-export type IncidentType = 'robbery' | 'assault' | 'harassment' | 'other';
+export type IncidentType = 'robbery' | 'assault' | 'harassment' | 'traffic' | 'other';
 
 export interface IncidentForm {
     name: string;

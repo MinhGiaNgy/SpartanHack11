@@ -138,7 +138,9 @@ export default function MapPage() {
                                             ? 'bg-white/20 text-white'
                                             : incident.type === 'robbery' || incident.type === 'assault'
                                                 ? 'bg-red-100 text-red-700'
-                                                : 'bg-yellow-100 text-yellow-700'
+                                                : incident.type === 'traffic'
+                                                    ? 'bg-orange-100 text-orange-700'
+                                                    : 'bg-yellow-100 text-yellow-700'
                                         }`}
                                     >
                                         {incident.type}

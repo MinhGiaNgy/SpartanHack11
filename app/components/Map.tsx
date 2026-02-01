@@ -333,6 +333,7 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
                                         <option value="robbery">Robbery</option>
                                         <option value="assault">Assault</option>
                                         <option value="harassment">Harassment</option>
+                                        <option value="traffic">Traffic</option>
                                     </select>
                                     <textarea required value={form.details} onChange={e => setForm({ ...form, details: e.target.value })} placeholder="Details" className="w-full text-sm p-2 border rounded text-[var(--ink)] placeholder-[var(--slate)]/70" rows={2} />
                                     <button type="submit" className="w-full py-2 bg-[var(--forest)] text-white rounded text-sm font-semibold hover:bg-[var(--forest-dark)] transition-colors">Submit</button>
