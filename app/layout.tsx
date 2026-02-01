@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "SpartaSafe | Campus Crime Map",
   description:
     "A student-first safety map for East Lansing with AI-powered hotspot warnings.",
+  icons: {
+    icon: "/spartan.svg",
+  },
 };
 
 export default function RootLayout({
