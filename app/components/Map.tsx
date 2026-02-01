@@ -119,6 +119,23 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
         }
     }, [autoReport, map]);
 
+    // Handle center on me trigger
+    useEffect(() => {
+        if (centerTrigger && centerTrigger > 0 && map) {
+            map.locate({
+                setView: true,
+                maxZoom: 15,
+                enableHighAccuracy: true
+            });
+
+            // Handle errors for Center on me
+            map.once("locationerror", (e) => {
+                console.error("Locate failed:", e);
+                if (e.code === 1) alert("Please enable location services to center on your position.");
+            });
+        }
+    }, [centerTrigger, map]);
+
     // Handle manual report button click
     useEffect(() => {
         if (reportTrigger && reportTrigger > 0 && map) {
