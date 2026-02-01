@@ -20,6 +20,7 @@ const Map = dynamic(() => import('../components/Map'), {
 export default function MapPageClient() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [activeIncident, setActiveIncident] = useState<Incident | null>(null);
+  const [reportTrigger, setReportTrigger] = useState<number>(0);
   const [filterDuration, setFilterDuration] = useState<
     '1day' | '1week' | '1month' | '3months' | 'all'
   >('1month');
@@ -159,12 +160,9 @@ export default function MapPageClient() {
         </Link>
       </header>
 
-      {/* Floating Report Button */}
       <button
         className="fixed bottom-24 right-6 z-50 bg-[var(--forest)] text-white shadow-lg rounded-full px-4 py-3 font-semibold text-sm flex items-center gap-2 hover:bg-[var(--forest-dark)] hover:scale-105 transition-all"
-        onClick={() =>
-          alert('Click on any location on the map to manually report an incident.')
-        }
+        onClick={() => setReportTrigger(Date.now())}
       >
         <span className="text-xl leading-none">+</span>
         Report Incident
@@ -257,6 +255,7 @@ export default function MapPageClient() {
             onIncidentClick={handleIncidentSelect}
             onIncidentAdded={handleIncidentAdded}
             autoReport={autoReport}
+            reportTrigger={reportTrigger}
           />
         </div>
       </main>

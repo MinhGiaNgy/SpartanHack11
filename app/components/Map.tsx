@@ -58,10 +58,11 @@ interface LocationMarkerProps {
     onIncidentClick: (incident: Incident) => void;
     onIncidentAdded: (incident: Incident) => void;
     autoReport?: boolean;
+    reportTrigger?: number;
 }
 
 // Component to handle map clicks and rendering
-function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded, autoReport }: LocationMarkerProps) {
+function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded, autoReport, reportTrigger }: LocationMarkerProps) {
     const map = useMap();
     const [position, setPosition] = useState<L.LatLng | null>(null);
     const [form, setForm] = useState<IncidentForm>({
@@ -115,6 +116,23 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
             });
         }
     }, [autoReport, map]);
+
+    // Handle manual report button click
+    useEffect(() => {
+        if (reportTrigger && reportTrigger > 0 && map) {
+            map.locate().on("locationfound", (e) => {
+                setPosition(e.latlng);
+                // Dynamic offset for popup
+                const zoom = 16;
+                const targetPoint = map.project(e.latlng, zoom);
+                const offset = map.getSize().y * 0.25;
+                targetPoint.y -= offset;
+                const targetLatLng = map.unproject(targetPoint, zoom);
+
+                map.flyTo(targetLatLng, zoom);
+            });
+        }
+    }, [reportTrigger, map]);
 
     // Update Supercluster when data changes
     useEffect(() => {
@@ -415,9 +433,10 @@ interface MapProps {
     onIncidentClick?: (incident: Incident) => void;
     onIncidentAdded?: (incident: Incident) => void;
     autoReport?: boolean;
+    reportTrigger?: number;
 }
 
-export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { }, onIncidentAdded = () => { }, autoReport = false }: MapProps) {
+export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { }, onIncidentAdded = () => { }, autoReport = false, reportTrigger = 0 }: MapProps) {
     // Default position (Lansing/East Lansing area for SpartanHack)
     const defaultPosition: [number, number] = [42.7284, -84.4805];
 
@@ -442,6 +461,7 @@ export default function Map({ incidents = [], activeIncident = null, onIncidentC
                     onIncidentClick={onIncidentClick}
                     onIncidentAdded={onIncidentAdded}
                     autoReport={autoReport}
+                    reportTrigger={reportTrigger}
                 />
             </MapContainer>
         </div>
