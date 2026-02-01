@@ -37,6 +37,51 @@ export default function MapPage() {
         fetchIncidents();
     }, []);
 
+    // WebSocket: live incident updates
+    useEffect(() => {
+        let active = true;
+        let socket: WebSocket | null = null;
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const connect = () => {
+            if (!active) return;
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            socket = new WebSocket(`${protocol}://${window.location.host}/ws`);
+
+            socket.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    if (message?.type === 'incident_created' && message.payload) {
+                        const incoming = message.payload as Incident;
+                        setIncidents(prev => {
+                            if (prev.some(item => item.id === incoming.id)) return prev;
+                            return [incoming, ...prev];
+                        });
+                    }
+                } catch (error) {
+                    console.warn('Invalid WS message:', error);
+                }
+            };
+
+            socket.onerror = () => {
+                socket?.close();
+            };
+
+            socket.onclose = () => {
+                if (!active) return;
+                reconnectTimer = setTimeout(connect, 2000);
+            };
+        };
+
+        connect();
+
+        return () => {
+            active = false;
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            socket?.close();
+        };
+    }, []);
+
     // Handlers
     const handleIncidentSelect = (incident: Incident) => {
         setActiveIncident(incident);

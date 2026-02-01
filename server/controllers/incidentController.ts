@@ -1,5 +1,6 @@
 import { getIncidentsService, createIncidentService } from "@/server/services/incidentService";
 import { toDtos, toDto } from "@/server/mappers/incidentMapper";
+import { broadcastIncidentCreated } from "@/server/wsServer";
 import { GetIncidentsSchema, CreateIncidentSchema, type GetIncidentsRequest, type CreateIncidentRequest } from "@/server/types/incident";
 
 export async function handleGetIncidents(request: Request): Promise<Response> {
@@ -49,6 +50,12 @@ export async function handleCreateIncident(request: Request): Promise<Response> 
 
     // Map to DTO
     const dto = toDto(incident);
+
+    try {
+      broadcastIncidentCreated(dto);
+    } catch (broadcastError) {
+      console.warn("WebSocket broadcast failed:", broadcastError);
+    }
 
     // Return JSON response
     return Response.json(dto);
