@@ -50,10 +50,11 @@ interface LocationMarkerProps {
     activeIncident: Incident | null;
     onIncidentClick: (incident: Incident) => void;
     onIncidentAdded: (incident: Incident) => void;
+    autoReport?: boolean;
 }
 
 // Component to handle map clicks and rendering
-function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded }: LocationMarkerProps) {
+function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded, autoReport }: LocationMarkerProps) {
     const map = useMap();
     const [position, setPosition] = useState<L.LatLng | null>(null);
     const [form, setForm] = useState<IncidentForm>({
@@ -96,6 +97,17 @@ function MapLayers({ incidents, activeIncident, onIncidentClick, onIncidentAdded
         }
         return false;
     };
+
+
+    // Auto-report logic
+    useEffect(() => {
+        if (autoReport && map) {
+            map.locate().on("locationfound", (e) => {
+                setPosition(e.latlng);
+                map.flyTo(e.latlng, 16);
+            });
+        }
+    }, [autoReport, map]);
 
     // Update Supercluster when data changes
     useEffect(() => {
@@ -339,9 +351,10 @@ interface MapProps {
     activeIncident?: Incident | null;
     onIncidentClick?: (incident: Incident) => void;
     onIncidentAdded?: (incident: Incident) => void;
+    autoReport?: boolean;
 }
 
-export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { }, onIncidentAdded = () => { } }: MapProps) {
+export default function Map({ incidents = [], activeIncident = null, onIncidentClick = () => { }, onIncidentAdded = () => { }, autoReport = false }: MapProps) {
     // Default position (Lansing/East Lansing area for SpartanHack)
     const defaultPosition: [number, number] = [42.7284, -84.4805];
 
@@ -364,6 +377,7 @@ export default function Map({ incidents = [], activeIncident = null, onIncidentC
                     activeIncident={activeIncident}
                     onIncidentClick={onIncidentClick}
                     onIncidentAdded={onIncidentAdded}
+                    autoReport={autoReport}
                 />
             </MapContainer>
         </div>

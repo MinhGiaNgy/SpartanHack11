@@ -1,4 +1,5 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -21,6 +22,9 @@ export default function MapPage() {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [activeIncident, setActiveIncident] = useState<Incident | null>(null);
     const [filterDuration, setFilterDuration] = useState<'1day' | '1week' | '1month' | '3months' | 'all'>('1month');
+
+    const searchParams = useSearchParams();
+    const autoReport = searchParams.get('action') === 'report';
 
     // Filter Incidents Logic
     const getFilteredIncidents = () => {
@@ -163,6 +167,7 @@ export default function MapPage() {
                         activeIncident={activeIncident}
                         onIncidentClick={handleIncidentSelect}
                         onIncidentAdded={handleIncidentAdded}
+                        autoReport={autoReport}
                     />
                 </div>
             </main>
