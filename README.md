@@ -1,6 +1,6 @@
 # SpartanHack11
 SpartaSafe – campus safety map and AI assistant.
-
+https://devpost.com/software/spartasafe
 ## Quick start (new machine)
 
 1) Install dependencies
